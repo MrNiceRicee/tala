@@ -1,0 +1,23 @@
+{
+  "name": "research-lab",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "lab": "bun src/cli.ts",
+    "test": "bun test",
+    "lint": "biome check src/ test/",
+    "lint:fix": "biome check --write src/ test/"
+  },
+  "dependencies": {
+    "effect": "latest",
+    "gray-matter": "^4.0.3",
+    "remark-frontmatter": "^5.0.0",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "latest",
+    "@types/bun": "latest",
+    "typescript": "latest"
+  }
+}
