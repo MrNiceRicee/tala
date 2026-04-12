@@ -16,7 +16,7 @@ Research trip planning.
 
 - JR 7-day pass is 50,000 yen [[sources/jr-pass-guide|JR Pass Guide]]
 - Shinjuku is the best base for Tokyo *(hypothesis)*
-- Budget 15,000 yen per day for food *(unverified)*
+- Budget 15,000 yen per day for food *(single-source)*
 - Hotels average 12,000 yen per night
 
 ## Open
@@ -46,12 +46,12 @@ describe("extractWikilinks", () => {
 });
 
 describe("extractClaimMarkers", () => {
-	it("finds hypothesis and unverified markers", () => {
+	it("finds hypothesis and single-source markers", () => {
 		const markers = extractClaimMarkers(sampleMarkdown);
 		expect(markers).toHaveLength(2);
 		expect(markers[0].kind).toBe("hypothesis");
 		expect(markers[0].line).toContain("Shinjuku");
-		expect(markers[1].kind).toBe("unverified");
+		expect(markers[1].kind).toBe("single-source");
 		expect(markers[1].line).toContain("Budget");
 	});
 
@@ -66,6 +66,50 @@ describe("extractClaimMarkers", () => {
 		const markers = extractClaimMarkers("Just normal text.");
 		expect(markers).toHaveLength(0);
 	});
+
+	it("finds unsupported markers", () => {
+		const md = "- Hotels average 12,000 yen *(unsupported)*"
+		const markers = extractClaimMarkers(md)
+		expect(markers).toHaveLength(1)
+		expect(markers[0].kind).toBe("unsupported")
+	})
+
+	it("finds single-source markers", () => {
+		const md = "- Shinjuku has most transit *(single-source)*"
+		const markers = extractClaimMarkers(md)
+		expect(markers).toHaveLength(1)
+		expect(markers[0].kind).toBe("single-source")
+	})
+
+	it("finds contradicted markers", () => {
+		const md = "- Capsule hotels are cheaper *(contradicted)*"
+		const markers = extractClaimMarkers(md)
+		expect(markers).toHaveLength(1)
+		expect(markers[0].kind).toBe("contradicted")
+	})
+
+	it("finds contradicted callout markers", () => {
+		const md = "> [!contradicted]\n> Sources disagree on this."
+		const markers = extractClaimMarkers(md)
+		expect(markers).toHaveLength(1)
+		expect(markers[0].kind).toBe("contradicted")
+	})
+
+	it("finds all four marker types in one document", () => {
+		const md = [
+			"- Claim A *(unsupported)*",
+			"- Claim B *(single-source)*",
+			"- Claim C *(hypothesis)*",
+			"- Claim D *(contradicted)*",
+		].join("\n")
+		const markers = extractClaimMarkers(md)
+		expect(markers).toHaveLength(4)
+		const kinds = markers.map((m) => m.kind)
+		expect(kinds).toContain("unsupported")
+		expect(kinds).toContain("single-source")
+		expect(kinds).toContain("hypothesis")
+		expect(kinds).toContain("contradicted")
+	})
 });
 
 describe("extractSections", () => {

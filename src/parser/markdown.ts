@@ -1,3 +1,5 @@
+import { CLAIM_MARKERS, type ClaimMarkerKind } from "../schema"
+
 export interface Wikilink {
 	target: string;
 	display?: string;
@@ -5,7 +7,7 @@ export interface Wikilink {
 }
 
 export interface ClaimMarker {
-	kind: "hypothesis" | "unverified";
+	kind: ClaimMarkerKind;
 	line: string;
 	lineNumber: number;
 }
@@ -41,39 +43,53 @@ export function extractWikilinks(content: string): Wikilink[] {
 	return links;
 }
 
-const inlineMarkerPattern = /\*\((hypothesis|unverified)\)\*/g;
+const markerLabels = Object.values(CLAIM_MARKERS).map((m) => m.label)
+const inlineMarkerPattern = new RegExp(
+	`\\*\\((${markerLabels.join("|")})\\)\\*`,
+	"g",
+)
+const calloutPattern = new RegExp(
+	`^>\\s*\\[!(${markerLabels.join("|")})\\]`,
+)
 
 export function extractClaimMarkers(content: string): ClaimMarker[] {
-	const markers: ClaimMarker[] = [];
-	const lines = content.split("\n");
+	const markers: ClaimMarker[] = []
+	const lines = content.split("\n")
+	const validKinds = new Set<string>(markerLabels)
 
 	for (let i = 0; i < lines.length; i++) {
-		const line = lines[i];
+		const line = lines[i]
 
-		inlineMarkerPattern.lastIndex = 0;
+		inlineMarkerPattern.lastIndex = 0
 		for (
 			let match = inlineMarkerPattern.exec(line);
 			match !== null;
 			match = inlineMarkerPattern.exec(line)
 		) {
-			markers.push({
-				kind: match[1] as "hypothesis" | "unverified",
-				line: line.trim(),
-				lineNumber: i + 1,
-			});
+			const kind = match[1]
+			if (validKinds.has(kind)) {
+				markers.push({
+					kind: kind as ClaimMarkerKind,
+					line: line.trim(),
+					lineNumber: i + 1,
+				})
+			}
 		}
 
-		const calloutMatch = line.match(/^>\s*\[!(hypothesis|unverified)\]/);
+		const calloutMatch = line.match(calloutPattern)
 		if (calloutMatch) {
-			markers.push({
-				kind: calloutMatch[1] as "hypothesis" | "unverified",
-				line: line.trim(),
-				lineNumber: i + 1,
-			});
+			const kind = calloutMatch[1]
+			if (validKinds.has(kind)) {
+				markers.push({
+					kind: kind as ClaimMarkerKind,
+					line: line.trim(),
+					lineNumber: i + 1,
+				})
+			}
 		}
 	}
 
-	return markers;
+	return markers
 }
 
 export function extractSections(content: string): Map<string, string> {
