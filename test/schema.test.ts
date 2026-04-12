@@ -6,7 +6,10 @@ import {
 	HubFrontmatter,
 	NoteStatus,
 	NoteType,
+	NoteFrontmatter,
 	SourceFrontmatter,
+	CLAIM_MARKERS,
+	ClaimMarkerKind,
 } from "../src/schema";
 
 describe("NoteStatus", () => {
@@ -124,3 +127,42 @@ describe("ComputationFrontmatter", () => {
 		expect(result.script).toBe("./salary-comparison.ts");
 	});
 });
+
+describe("CLAIM_MARKERS", () => {
+	it("has all four marker kinds", () => {
+		expect(CLAIM_MARKERS.unsupported).toBeDefined()
+		expect(CLAIM_MARKERS["single-source"]).toBeDefined()
+		expect(CLAIM_MARKERS.hypothesis).toBeDefined()
+		expect(CLAIM_MARKERS.contradicted).toBeDefined()
+	})
+
+	it("each marker has label and description", () => {
+		for (const marker of Object.values(CLAIM_MARKERS)) {
+			expect(typeof marker.label).toBe("string")
+			expect(typeof marker.description).toBe("string")
+			expect(marker.label.length).toBeGreaterThan(0)
+			expect(marker.description.length).toBeGreaterThan(0)
+		}
+	})
+
+	it("labels are unique", () => {
+		const labels = Object.values(CLAIM_MARKERS).map((m) => m.label)
+		expect(new Set(labels).size).toBe(labels.length)
+	})
+})
+
+describe("ClaimMarkerKind", () => {
+	const decode = Schema.decodeUnknownSync(ClaimMarkerKind)
+
+	it("accepts all marker labels", () => {
+		expect(decode("unsupported")).toBe("unsupported")
+		expect(decode("single-source")).toBe("single-source")
+		expect(decode("hypothesis")).toBe("hypothesis")
+		expect(decode("contradicted")).toBe("contradicted")
+	})
+
+	it("rejects unknown labels", () => {
+		expect(() => decode("proven")).toThrow()
+		expect(() => decode("unverified")).toThrow()
+	})
+})

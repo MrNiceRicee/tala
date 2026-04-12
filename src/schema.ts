@@ -44,3 +44,29 @@ export const ComputationFrontmatter = Schema.Struct({
 	ran_at: Schema.optional(Schema.String),
 });
 export type ComputationFrontmatter = typeof ComputationFrontmatter.Type;
+
+export const CLAIM_MARKERS = {
+	unsupported: {
+		label: "unsupported",
+		description: "no evidence at all",
+	},
+	"single-source": {
+		label: "single-source",
+		description: "one source, needs corroboration",
+	},
+	hypothesis: {
+		label: "hypothesis",
+		description: "reasoned inference, not directly provable",
+	},
+	contradicted: {
+		label: "contradicted",
+		description: "sources disagree on this claim",
+	},
+} as const satisfies Record<string, { label: string; description: string }>
+
+export const CLAIM_MARKER_LABELS = Object.values(CLAIM_MARKERS).map(
+	(m) => m.label,
+) as [string, ...string[]]
+
+export const ClaimMarkerKind = Schema.Literal(...CLAIM_MARKER_LABELS)
+export type ClaimMarkerKind = typeof ClaimMarkerKind.Type
