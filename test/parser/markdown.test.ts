@@ -1,5 +1,10 @@
-import { describe, expect, it } from "bun:test"
-import { extractWikilinks, extractClaimMarkers, extractSections, parseMarkdown } from "../../src/parser/markdown"
+import { describe, expect, it } from "bun:test";
+import {
+	extractClaimMarkers,
+	extractSections,
+	extractWikilinks,
+	parseMarkdown,
+} from "../../src/parser/markdown";
 
 const sampleMarkdown = `# Trip to Japan
 
@@ -17,73 +22,73 @@ Research trip planning.
 ## Open
 
 - Need more data on Kyoto accommodations
-`
+`;
 
 describe("extractWikilinks", () => {
 	it("finds wikilinks in content", () => {
-		const links = extractWikilinks(sampleMarkdown)
-		expect(links).toHaveLength(1)
-		expect(links[0].target).toBe("sources/jr-pass-guide")
-		expect(links[0].display).toBe("JR Pass Guide")
-	})
+		const links = extractWikilinks(sampleMarkdown);
+		expect(links).toHaveLength(1);
+		expect(links[0].target).toBe("sources/jr-pass-guide");
+		expect(links[0].display).toBe("JR Pass Guide");
+	});
 
 	it("handles wikilinks without display text", () => {
-		const links = extractWikilinks("See [[some-topic]] for details.")
-		expect(links).toHaveLength(1)
-		expect(links[0].target).toBe("some-topic")
-		expect(links[0].display).toBeUndefined()
-	})
+		const links = extractWikilinks("See [[some-topic]] for details.");
+		expect(links).toHaveLength(1);
+		expect(links[0].target).toBe("some-topic");
+		expect(links[0].display).toBeUndefined();
+	});
 
 	it("returns empty for no wikilinks", () => {
-		const links = extractWikilinks("No links here.")
-		expect(links).toHaveLength(0)
-	})
-})
+		const links = extractWikilinks("No links here.");
+		expect(links).toHaveLength(0);
+	});
+});
 
 describe("extractClaimMarkers", () => {
 	it("finds hypothesis and unverified markers", () => {
-		const markers = extractClaimMarkers(sampleMarkdown)
-		expect(markers).toHaveLength(2)
-		expect(markers[0].kind).toBe("hypothesis")
-		expect(markers[0].line).toContain("Shinjuku")
-		expect(markers[1].kind).toBe("unverified")
-		expect(markers[1].line).toContain("Budget")
-	})
+		const markers = extractClaimMarkers(sampleMarkdown);
+		expect(markers).toHaveLength(2);
+		expect(markers[0].kind).toBe("hypothesis");
+		expect(markers[0].line).toContain("Shinjuku");
+		expect(markers[1].kind).toBe("unverified");
+		expect(markers[1].line).toContain("Budget");
+	});
 
 	it("finds callout-style markers", () => {
-		const md = `> [!hypothesis]\n> This is speculative.`
-		const markers = extractClaimMarkers(md)
-		expect(markers).toHaveLength(1)
-		expect(markers[0].kind).toBe("hypothesis")
-	})
+		const md = `> [!hypothesis]\n> This is speculative.`;
+		const markers = extractClaimMarkers(md);
+		expect(markers).toHaveLength(1);
+		expect(markers[0].kind).toBe("hypothesis");
+	});
 
 	it("returns empty when no markers", () => {
-		const markers = extractClaimMarkers("Just normal text.")
-		expect(markers).toHaveLength(0)
-	})
-})
+		const markers = extractClaimMarkers("Just normal text.");
+		expect(markers).toHaveLength(0);
+	});
+});
 
 describe("extractSections", () => {
 	it("extracts h2 sections from markdown", () => {
-		const sections = extractSections(sampleMarkdown)
-		expect(sections.has("Intent")).toBe(true)
-		expect(sections.has("Findings")).toBe(true)
-		expect(sections.has("Open")).toBe(true)
-	})
+		const sections = extractSections(sampleMarkdown);
+		expect(sections.has("Intent")).toBe(true);
+		expect(sections.has("Findings")).toBe(true);
+		expect(sections.has("Open")).toBe(true);
+	});
 
 	it("captures content under each section", () => {
-		const sections = extractSections(sampleMarkdown)
-		const findings = sections.get("Findings") ?? ""
-		expect(findings).toContain("JR 7-day pass")
-		expect(findings).toContain("*(hypothesis)*")
-	})
-})
+		const sections = extractSections(sampleMarkdown);
+		const findings = sections.get("Findings") ?? "";
+		expect(findings).toContain("JR 7-day pass");
+		expect(findings).toContain("*(hypothesis)*");
+	});
+});
 
 describe("parseMarkdown", () => {
 	it("returns structured result with all extractions", () => {
-		const result = parseMarkdown(sampleMarkdown)
-		expect(result.wikilinks.length).toBeGreaterThan(0)
-		expect(result.claimMarkers.length).toBeGreaterThan(0)
-		expect(result.sections.size).toBeGreaterThan(0)
-	})
-})
+		const result = parseMarkdown(sampleMarkdown);
+		expect(result.wikilinks.length).toBeGreaterThan(0);
+		expect(result.claimMarkers.length).toBeGreaterThan(0);
+		expect(result.sections.size).toBeGreaterThan(0);
+	});
+});

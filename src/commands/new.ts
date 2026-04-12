@@ -1,29 +1,31 @@
-import { join } from "node:path"
-import { mkdir } from "node:fs/promises"
-import { existsSync } from "node:fs"
+import { existsSync } from "node:fs";
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
 
 export interface CreateTopicResult {
-	success: boolean
-	slug: string
-	path: string
-	error?: string
+	success: boolean;
+	slug: string;
+	path: string;
+	error?: string;
 }
 
 export function slugify(text: string): string {
-	return text
-		.trim()
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, "-")
-		.replace(/-+/g, "-")
-		.replace(/^-|-$/g, "") || "topic"
+	return (
+		text
+			.trim()
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, "-")
+			.replace(/-+/g, "-")
+			.replace(/^-|-$/g, "") || "topic"
+	);
 }
 
 function today(): string {
-	return new Date().toISOString().split("T")[0]
+	return new Date().toISOString().split("T")[0];
 }
 
 function generateHub(title: string, slug: string): string {
-	const date = today()
+	const date = today();
 	return `---
 type: hub
 title: ${title}
@@ -55,15 +57,15 @@ updated: ${date}
 ## Related
 
 -
-`
+`;
 }
 
 export async function createTopic(
 	labRoot: string,
 	title: string,
 ): Promise<CreateTopicResult> {
-	const slug = slugify(title)
-	const topicDir = join(labRoot, "topics", slug)
+	const slug = slugify(title);
+	const topicDir = join(labRoot, "topics", slug);
 
 	if (existsSync(topicDir)) {
 		return {
@@ -71,15 +73,15 @@ export async function createTopic(
 			slug,
 			path: topicDir,
 			error: `topic already exists: ${topicDir}`,
-		}
+		};
 	}
 
-	await mkdir(topicDir, { recursive: true })
-	await mkdir(join(topicDir, "sources"), { recursive: true })
-	await mkdir(join(topicDir, "computations"), { recursive: true })
+	await mkdir(topicDir, { recursive: true });
+	await mkdir(join(topicDir, "sources"), { recursive: true });
+	await mkdir(join(topicDir, "computations"), { recursive: true });
 
-	const hubPath = join(topicDir, `${slug}.md`)
-	await Bun.write(hubPath, generateHub(title, slug))
+	const hubPath = join(topicDir, `${slug}.md`);
+	await Bun.write(hubPath, generateHub(title, slug));
 
-	return { success: true, slug, path: topicDir }
+	return { success: true, slug, path: topicDir };
 }

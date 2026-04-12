@@ -1,54 +1,54 @@
-import { join } from "node:path"
-import { readdir } from "node:fs/promises"
-import { existsSync } from "node:fs"
-import { Either } from "effect"
-import { parseFrontmatter } from "../parser/frontmatter"
+import { existsSync } from "node:fs";
+import { readdir } from "node:fs/promises";
+import { join } from "node:path";
+import { Either } from "effect";
+import { parseFrontmatter } from "../parser/frontmatter";
 
 export interface SearchHit {
-	file: string
-	title: string
-	status: string
-	line: number
-	context: string
+	file: string;
+	title: string;
+	status: string;
+	line: number;
+	context: string;
 }
 
 const statusRank: Record<string, number> = {
 	distilled: 0,
 	working: 1,
 	sketch: 2,
-}
+};
 
 async function searchDir(
 	dir: string,
 	basePath: string,
 	query: string,
 ): Promise<SearchHit[]> {
-	const hits: SearchHit[] = []
-	if (!existsSync(dir)) return hits
+	const hits: SearchHit[] = [];
+	if (!existsSync(dir)) return hits;
 
-	const files = await readdir(dir, { withFileTypes: true })
+	const files = await readdir(dir, { withFileTypes: true });
 
 	for (const file of files) {
-		const filePath = join(dir, file.name)
+		const filePath = join(dir, file.name);
 		if (file.isDirectory()) {
 			hits.push(
 				...(await searchDir(filePath, `${basePath}/${file.name}`, query)),
-			)
-			continue
+			);
+			continue;
 		}
-		if (!file.name.endsWith(".md")) continue
+		if (!file.name.endsWith(".md")) continue;
 
-		const raw = await Bun.file(filePath).text()
-		const parsed = parseFrontmatter(raw)
+		const raw = await Bun.file(filePath).text();
+		const parsed = parseFrontmatter(raw);
 		const title = Either.isRight(parsed)
 			? (parsed.right.data.title as string)
-			: file.name
+			: file.name;
 		const status = Either.isRight(parsed)
 			? (parsed.right.data.status as string)
-			: "sketch"
+			: "sketch";
 
-		const lines = raw.split("\n")
-		const lowerQuery = query.toLowerCase()
+		const lines = raw.split("\n");
+		const lowerQuery = query.toLowerCase();
 
 		for (let i = 0; i < lines.length; i++) {
 			if (lines[i].toLowerCase().includes(lowerQuery)) {
@@ -58,22 +58,22 @@ async function searchDir(
 					status,
 					line: i + 1,
 					context: lines[i].trim().slice(0, 120),
-				})
+				});
 			}
 		}
 	}
 
-	return hits
+	return hits;
 }
 
 export async function search(
 	labRoot: string,
 	query: string,
 ): Promise<SearchHit[]> {
-	const topicsDir = join(labRoot, "topics")
-	const hits = await searchDir(topicsDir, "topics", query)
+	const topicsDir = join(labRoot, "topics");
+	const hits = await searchDir(topicsDir, "topics", query);
 
 	return hits.sort(
 		(a, b) => (statusRank[a.status] ?? 3) - (statusRank[b.status] ?? 3),
-	)
+	);
 }

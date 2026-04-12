@@ -1,12 +1,12 @@
-import { createTopic } from "./commands/new"
-import { refreshIndex } from "./commands/index"
-import { runValidation } from "./commands/validate"
-import { runComputation } from "./commands/compute"
-import { search } from "./commands/search"
-import { runCheck } from "./commands/check"
+import { runCheck } from "./commands/check";
+import { runComputation } from "./commands/compute";
+import { refreshIndex } from "./commands/index";
+import { createTopic } from "./commands/new";
+import { search } from "./commands/search";
+import { runValidation } from "./commands/validate";
 
-const args = process.argv.slice(2)
-const command = args[0]
+const args = process.argv.slice(2);
+const command = args[0];
 
 const commandDescriptions: Record<string, string> = {
 	new: "create a new research topic",
@@ -15,117 +15,120 @@ const commandDescriptions: Record<string, string> = {
 	search: "search across topics",
 	check: "show staleness report",
 	compute: "run a deterministic computation script",
-}
+};
 
 function printHelp() {
-	console.log("research lab cli\n")
-	console.log("usage: bun run lab <command> [options]\n")
-	console.log("commands:")
+	console.log("research lab cli\n");
+	console.log("usage: bun run lab <command> [options]\n");
+	console.log("commands:");
 	for (const [name, desc] of Object.entries(commandDescriptions)) {
-		console.log(`  ${name.padEnd(12)} ${desc}`)
+		console.log(`  ${name.padEnd(12)} ${desc}`);
 	}
 }
 
 if (!command || command === "--help" || command === "-h") {
-	printHelp()
-	process.exit(0)
+	printHelp();
+	process.exit(0);
 }
 
 if (!commandDescriptions[command]) {
-	console.error(`unknown command: ${command}`)
-	printHelp()
-	process.exit(1)
+	console.error(`unknown command: ${command}`);
+	printHelp();
+	process.exit(1);
 }
 
-const labRoot = import.meta.dir.replace(/\/src$/, "")
+const labRoot = import.meta.dir.replace(/\/src$/, "");
 
 switch (command) {
 	case "new": {
-		const title = args.slice(1).join(" ")
+		const title = args.slice(1).join(" ");
 		if (!title) {
-			console.error("usage: bun run lab new \"Topic Title\"")
-			process.exit(1)
+			console.error('usage: bun run lab new "Topic Title"');
+			process.exit(1);
 		}
-		const result = await createTopic(labRoot, title)
+		const result = await createTopic(labRoot, title);
 		if (result.success) {
-			console.log(`created topic: ${result.slug}`)
-			console.log(`  ${result.path}`)
+			console.log(`created topic: ${result.slug}`);
+			console.log(`  ${result.path}`);
 		} else {
-			console.error(result.error)
-			process.exit(1)
+			console.error(result.error);
+			process.exit(1);
 		}
-		break
+		break;
 	}
 	case "index": {
-		const result = await refreshIndex(labRoot)
-		console.log(`index refreshed: ${result.topicCount} topic(s)`)
-		break
+		const result = await refreshIndex(labRoot);
+		console.log(`index refreshed: ${result.topicCount} topic(s)`);
+		break;
 	}
 	case "validate": {
-		const slug = args[1]
-		const result = await runValidation(labRoot, slug)
+		const slug = args[1];
+		const result = await runValidation(labRoot, slug);
 		if (result.report) {
-			console.log(result.report)
+			console.log(result.report);
 		}
 		if (result.totalIssues === 0) {
-			console.log("no issues found")
+			console.log("no issues found");
 		} else {
-			console.log(`${result.totalIssues} issue(s) found`)
+			console.log(`${result.totalIssues} issue(s) found`);
 		}
-		process.exit(result.exitCode)
+		process.exit(result.exitCode);
+		break;
 	}
 	case "compute": {
-		const slug = args[1]
-		const scriptName = args[2]
+		const slug = args[1];
+		const scriptName = args[2];
 		if (!slug || !scriptName) {
-			console.error('usage: bun run lab compute <topic-slug> <script-name> [-- args...]')
-			process.exit(1)
+			console.error(
+				"usage: bun run lab compute <topic-slug> <script-name> [-- args...]",
+			);
+			process.exit(1);
 		}
-		const dashDash = args.indexOf("--")
-		const scriptArgs = dashDash >= 0 ? args.slice(dashDash + 1) : []
+		const dashDash = args.indexOf("--");
+		const scriptArgs = dashDash >= 0 ? args.slice(dashDash + 1) : [];
 
-		const result = await runComputation(labRoot, slug, scriptName, scriptArgs)
+		const result = await runComputation(labRoot, slug, scriptName, scriptArgs);
 		if (result.success) {
-			console.log(result.output)
-			console.log(`output saved: ${result.outputPath}`)
+			console.log(result.output);
+			console.log(`output saved: ${result.outputPath}`);
 		} else {
-			console.error(result.error)
-			process.exit(1)
+			console.error(result.error);
+			process.exit(1);
 		}
-		break
+		break;
 	}
 	case "search": {
-		const query = args.slice(1).join(" ")
+		const query = args.slice(1).join(" ");
 		if (!query) {
-			console.error('usage: bun run lab search "query"')
-			process.exit(1)
+			console.error('usage: bun run lab search "query"');
+			process.exit(1);
 		}
-		const hits = await search(labRoot, query)
+		const hits = await search(labRoot, query);
 		if (hits.length === 0) {
-			console.log("no results found")
+			console.log("no results found");
 		} else {
 			for (const hit of hits) {
-				console.log(`[${hit.status}] ${hit.file}:${hit.line}`)
-				console.log(`  ${hit.context}`)
+				console.log(`[${hit.status}] ${hit.file}:${hit.line}`);
+				console.log(`  ${hit.context}`);
 			}
-			console.log(`\n${hits.length} result(s)`)
+			console.log(`\n${hits.length} result(s)`);
 		}
-		break
+		break;
 	}
 
 	case "check": {
-		const result = await runCheck(labRoot)
+		const result = await runCheck(labRoot);
 		if (result.report) {
-			console.log(result.report)
+			console.log(result.report);
 		}
 		if (result.issueCount === 0) {
-			console.log("nothing needs attention")
+			console.log("nothing needs attention");
 		} else {
-			console.log(`${result.issueCount} item(s) need attention`)
+			console.log(`${result.issueCount} item(s) need attention`);
 		}
-		break
+		break;
 	}
 
 	default:
-		console.log(`[lab] command "${command}" not yet implemented`)
+		console.log(`[lab] command "${command}" not yet implemented`);
 }
