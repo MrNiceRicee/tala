@@ -2,6 +2,8 @@ import { createTopic } from "./commands/new"
 import { refreshIndex } from "./commands/index"
 import { runValidation } from "./commands/validate"
 import { runComputation } from "./commands/compute"
+import { search } from "./commands/search"
+import { runCheck } from "./commands/check"
 
 const args = process.argv.slice(2)
 const command = args[0]
@@ -92,6 +94,38 @@ switch (command) {
 		}
 		break
 	}
+	case "search": {
+		const query = args.slice(1).join(" ")
+		if (!query) {
+			console.error('usage: bun run lab search "query"')
+			process.exit(1)
+		}
+		const hits = await search(labRoot, query)
+		if (hits.length === 0) {
+			console.log("no results found")
+		} else {
+			for (const hit of hits) {
+				console.log(`[${hit.status}] ${hit.file}:${hit.line}`)
+				console.log(`  ${hit.context}`)
+			}
+			console.log(`\n${hits.length} result(s)`)
+		}
+		break
+	}
+
+	case "check": {
+		const result = await runCheck(labRoot)
+		if (result.report) {
+			console.log(result.report)
+		}
+		if (result.issueCount === 0) {
+			console.log("nothing needs attention")
+		} else {
+			console.log(`${result.issueCount} item(s) need attention`)
+		}
+		break
+	}
+
 	default:
 		console.log(`[lab] command "${command}" not yet implemented`)
 }
