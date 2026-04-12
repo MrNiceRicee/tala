@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+
+# obsidian config
+.obsidian/
+
+# internal dev lifecycle docs (specs, brainstorms, planning)
+docs/
+
+# os
+.DS_Store
+Thumbs.db
+
+# editor
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
