@@ -1,5 +1,6 @@
 import { runCheck } from "./commands/check";
 import { runComputation } from "./commands/compute";
+import { runHelp } from "./commands/help";
 import { refreshIndex } from "./commands/index";
 import { createTopic } from "./commands/new";
 import { search } from "./commands/search";
@@ -15,6 +16,7 @@ const commandDescriptions: Record<string, string> = {
 	search: "search across topics",
 	check: "show staleness report",
 	compute: "run a deterministic computation script",
+	help: "show conventions and usage",
 };
 
 function printHelp() {
@@ -126,6 +128,12 @@ switch (command) {
 		} else {
 			console.log(`${result.issueCount} item(s) need attention`);
 		}
+		break;
+	}
+
+	case "help": {
+		const topic = args[1];
+		console.log(runHelp(topic));
 		break;
 	}
 
