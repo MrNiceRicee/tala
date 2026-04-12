@@ -1,6 +1,7 @@
 import { createTopic } from "./commands/new"
 import { refreshIndex } from "./commands/index"
 import { runValidation } from "./commands/validate"
+import { runComputation } from "./commands/compute"
 
 const args = process.argv.slice(2)
 const command = args[0]
@@ -70,6 +71,26 @@ switch (command) {
 			console.log(`${result.totalIssues} issue(s) found`)
 		}
 		process.exit(result.exitCode)
+	}
+	case "compute": {
+		const slug = args[1]
+		const scriptName = args[2]
+		if (!slug || !scriptName) {
+			console.error('usage: bun run lab compute <topic-slug> <script-name> [-- args...]')
+			process.exit(1)
+		}
+		const dashDash = args.indexOf("--")
+		const scriptArgs = dashDash >= 0 ? args.slice(dashDash + 1) : []
+
+		const result = await runComputation(labRoot, slug, scriptName, scriptArgs)
+		if (result.success) {
+			console.log(result.output)
+			console.log(`output saved: ${result.outputPath}`)
+		} else {
+			console.error(result.error)
+			process.exit(1)
+		}
+		break
 	}
 	default:
 		console.log(`[lab] command "${command}" not yet implemented`)
