@@ -1,4 +1,5 @@
 import { createTopic } from "./commands/new"
+import { refreshIndex } from "./commands/index"
 
 const args = process.argv.slice(2)
 const command = args[0]
@@ -49,6 +50,11 @@ switch (command) {
 			console.error(result.error)
 			process.exit(1)
 		}
+		break
+	}
+	case "index": {
+		const result = await refreshIndex(labRoot)
+		console.log(`index refreshed: ${result.topicCount} topic(s)`)
 		break
 	}
 	default:
