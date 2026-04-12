@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { Either } from "effect";
 import { parseFrontmatter } from "../parser/frontmatter";
 import { parseMarkdown } from "../parser/markdown";
+import { CLAIM_MARKERS } from "../schema";
 
 export type Severity = "error" | "warn" | "info";
 
@@ -20,6 +21,11 @@ interface NoteInfo {
 	relativePath: string;
 	data: Record<string, unknown>;
 	content: string;
+}
+
+function getString(data: Record<string, unknown>, key: string): string | undefined {
+	const value = data[key]
+	return typeof value === "string" ? value : undefined
 }
 
 async function readNotes(
@@ -58,40 +64,53 @@ async function readNotes(
 	return notes;
 }
 
-function checkBareClaimsInFindings(
+const allMarkerLabels = Object.values(CLAIM_MARKERS).map((m) => m.label)
+const anyMarkerPattern = new RegExp(
+	`\\*\\((${allMarkerLabels.join("|")})\\)\\*`,
+)
+
+function checkClaimsInFindings(
 	note: NoteInfo,
 	status: string,
 ): ValidationIssue[] {
-	if (status === "sketch") return [];
+	if (status === "sketch") return []
 
-	const issues: ValidationIssue[] = [];
-	const md = parseMarkdown(note.content);
-	const findings = md.sections.get("Findings");
-	if (!findings) return [];
+	const issues: ValidationIssue[] = []
+	const md = parseMarkdown(note.content)
+	const findings = md.sections.get("Findings")
+	if (!findings) return []
 
-	const lines = findings.split("\n");
-	const severity: Severity = status === "distilled" ? "error" : "warn";
+	const lines = findings.split("\n")
 
 	for (const line of lines) {
-		const trimmed = line.trim();
+		const trimmed = line.trim()
 		if (!trimmed.startsWith("- ") || trimmed === "- " || trimmed === "-")
-			continue;
+			continue
 
-		const claim = trimmed.slice(2);
-		const hasWikilink = /\[\[.+\]\]/.test(claim);
-		const hasMarker = /\*\((hypothesis|unverified)\)\*/.test(claim);
+		const claim = trimmed.slice(2)
+		const hasWikilink = /\[\[.+\]\]/.test(claim)
+		const hasMarker = anyMarkerPattern.test(claim)
 
 		if (!hasWikilink && !hasMarker) {
 			issues.push({
-				severity,
+				severity: status === "distilled" ? "error" : "warn",
 				rule: "bare-claim",
 				file: note.relativePath,
 				message: `bare claim in Findings: "${claim.slice(0, 60)}${claim.length > 60 ? "..." : ""}"`,
-			});
+			})
+		}
+
+		if (/\*\(contradicted\)\*/.test(claim)) {
+			issues.push({
+				severity: status === "distilled" ? "error" : "warn",
+				rule: "contradicted-claim",
+				file: note.relativePath,
+				message: `contradicted claim in Findings: "${claim.slice(0, 60)}${claim.length > 60 ? "..." : ""}"`,
+			})
 		}
 	}
 
-	return issues;
+	return issues
 }
 
 export async function validateTopic(
@@ -144,7 +163,7 @@ export async function validateTopic(
 
 	// structural: wikilinks resolve (working and distilled only)
 	for (const note of allNotes) {
-		const status = note.data.status as string;
+		const status = getString(note.data, "status");
 		if (status !== "working" && status !== "distilled") continue;
 
 		const md = parseMarkdown(note.content);
@@ -191,15 +210,15 @@ export async function validateTopic(
 		}
 	}
 
-	// content: bare claims in findings
+	// content: claims in findings
 	for (const note of allNotes) {
-		const status = (note.data.status as string) ?? "sketch";
-		issues.push(...checkBareClaimsInFindings(note, status));
+		const status = getString(note.data, "status") ?? "sketch"
+		issues.push(...checkClaimsInFindings(note, status))
 	}
 
 	// content: empty required hub sections
 	if (hubNote) {
-		const hubStatus = (hubNote.data.status as string) ?? "sketch";
+		const hubStatus = getString(hubNote.data, "status") ?? "sketch";
 		if (hubStatus !== "sketch") {
 			const hubMd = parseMarkdown(hubNote.content);
 			const requiredSections = ["Intent", "Questions"];
@@ -228,7 +247,7 @@ export async function validateTopic(
 	const STALE_AFTER_DAYS = 60;
 
 	for (const note of allNotes) {
-		const updated = note.data.updated as string;
+		const updated = getString(note.data, "updated");
 		if (!updated) continue;
 
 		const updatedDate = new Date(updated);
@@ -238,7 +257,7 @@ export async function validateTopic(
 		);
 
 		if (daysSince > STALE_AFTER_DAYS) {
-			const status = note.data.status as string;
+			const status = getString(note.data, "status");
 			issues.push({
 				severity: status === "sketch" ? "info" : "warn",
 				rule: "stale-file",
