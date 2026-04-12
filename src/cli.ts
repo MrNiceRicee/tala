@@ -1,5 +1,6 @@
 import { createTopic } from "./commands/new"
 import { refreshIndex } from "./commands/index"
+import { runValidation } from "./commands/validate"
 
 const args = process.argv.slice(2)
 const command = args[0]
@@ -56,6 +57,19 @@ switch (command) {
 		const result = await refreshIndex(labRoot)
 		console.log(`index refreshed: ${result.topicCount} topic(s)`)
 		break
+	}
+	case "validate": {
+		const slug = args[1]
+		const result = await runValidation(labRoot, slug)
+		if (result.report) {
+			console.log(result.report)
+		}
+		if (result.totalIssues === 0) {
+			console.log("no issues found")
+		} else {
+			console.log(`${result.totalIssues} issue(s) found`)
+		}
+		process.exit(result.exitCode)
 	}
 	default:
 		console.log(`[lab] command "${command}" not yet implemented`)
