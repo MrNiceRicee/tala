@@ -70,3 +70,13 @@ export const CLAIM_MARKER_LABELS = Object.values(CLAIM_MARKERS).map(
 
 export const ClaimMarkerKind = Schema.Literal(...CLAIM_MARKER_LABELS)
 export type ClaimMarkerKind = typeof ClaimMarkerKind.Type
+
+export type SeverityLevel = "error" | "warn" | "info" | "ignore"
+
+export const MARKER_SEVERITY: Record<string, Record<string, SeverityLevel>> = {
+	unsupported:     { sketch: "ignore", working: "warn",   distilled: "error" },
+	"single-source": { sketch: "ignore", working: "info",   distilled: "warn" },
+	hypothesis:      { sketch: "ignore", working: "ignore", distilled: "ignore" },
+	contradicted:    { sketch: "ignore", working: "warn",   distilled: "error" },
+	"bare-claim":    { sketch: "ignore", working: "warn",   distilled: "error" },
+}

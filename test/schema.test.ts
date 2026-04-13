@@ -10,6 +10,7 @@ import {
 	SourceFrontmatter,
 	CLAIM_MARKERS,
 	ClaimMarkerKind,
+	MARKER_SEVERITY,
 } from "../src/schema";
 
 describe("NoteStatus", () => {
@@ -164,5 +165,29 @@ describe("ClaimMarkerKind", () => {
 	it("rejects unknown labels", () => {
 		expect(() => decode("proven")).toThrow()
 		expect(() => decode("unverified")).toThrow()
+	})
+})
+
+describe("MARKER_SEVERITY", () => {
+	it("has entries for all claim markers", () => {
+		for (const marker of Object.values(CLAIM_MARKERS)) {
+			expect(MARKER_SEVERITY[marker.label]).toBeDefined()
+		}
+	})
+
+	it("has entries for bare-claim", () => {
+		expect(MARKER_SEVERITY["bare-claim"]).toBeDefined()
+	})
+
+	it("returns correct severity for unsupported in distilled", () => {
+		expect(MARKER_SEVERITY.unsupported.distilled).toBe("error")
+	})
+
+	it("returns correct severity for hypothesis in distilled", () => {
+		expect(MARKER_SEVERITY.hypothesis.distilled).toBe("ignore")
+	})
+
+	it("returns correct severity for single-source in working", () => {
+		expect(MARKER_SEVERITY["single-source"].working).toBe("info")
 	})
 })

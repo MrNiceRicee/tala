@@ -4,9 +4,20 @@ import { join } from "node:path";
 import { Either } from "effect";
 import { parseFrontmatter } from "../parser/frontmatter";
 import { parseMarkdown } from "../parser/markdown";
-import { CLAIM_MARKERS } from "../schema";
+import { CLAIM_MARKERS, MARKER_SEVERITY, type SeverityLevel } from "../schema";
 
-export type Severity = "error" | "warn" | "info";
+export type Severity = SeverityLevel;
+
+function isSeverityLevel(value: unknown): value is SeverityLevel {
+	return value === "error" || value === "warn" || value === "info" || value === "ignore"
+}
+
+function getSeverity(marker: string, status: string): SeverityLevel {
+	const entry = MARKER_SEVERITY[marker]
+	if (!entry) return "ignore"
+	const value = entry[status]
+	return isSeverityLevel(value) ? value : "ignore"
+}
 
 export interface ValidationIssue {
 	severity: Severity;
@@ -92,21 +103,27 @@ function checkClaimsInFindings(
 		const hasMarker = anyMarkerPattern.test(claim)
 
 		if (!hasWikilink && !hasMarker) {
-			issues.push({
-				severity: status === "distilled" ? "error" : "warn",
-				rule: "bare-claim",
-				file: note.relativePath,
-				message: `bare claim in Findings: "${claim.slice(0, 60)}${claim.length > 60 ? "..." : ""}"`,
-			})
+			const severity = getSeverity("bare-claim", status)
+			if (severity !== "ignore") {
+				issues.push({
+					severity,
+					rule: "bare-claim",
+					file: note.relativePath,
+					message: `bare claim in Findings: "${claim.slice(0, 60)}${claim.length > 60 ? "..." : ""}"`,
+				})
+			}
 		}
 
 		if (/\*\(contradicted\)\*/.test(claim)) {
-			issues.push({
-				severity: status === "distilled" ? "error" : "warn",
-				rule: "contradicted-claim",
-				file: note.relativePath,
-				message: `contradicted claim in Findings: "${claim.slice(0, 60)}${claim.length > 60 ? "..." : ""}"`,
-			})
+			const severity = getSeverity("contradicted", status)
+			if (severity !== "ignore") {
+				issues.push({
+					severity,
+					rule: "contradicted-claim",
+					file: note.relativePath,
+					message: `contradicted claim in Findings: "${claim.slice(0, 60)}${claim.length > 60 ? "..." : ""}"`,
+				})
+			}
 		}
 	}
 
