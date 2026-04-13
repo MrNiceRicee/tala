@@ -6,6 +6,7 @@ import { runGather } from "./commands/gather";
 import { runHelp } from "./commands/help";
 import { refreshIndex } from "./commands/index";
 import { createTopic } from "./commands/new";
+import { runRefine } from "./commands/refine";
 import { search } from "./commands/search";
 import { runValidation } from "./commands/validate";
 import { runVerify } from "./commands/verify";
@@ -24,6 +25,7 @@ const commandDescriptions: Record<string, string> = {
 	verify: "check and corroborate claims",
 	conventions: "regenerate CONVENTIONS.md from definitions",
 	help: "show conventions and usage",
+	refine: "tournament-refine a topic section",
 };
 
 function printHelp() {
@@ -185,6 +187,32 @@ switch (command) {
 	case "help": {
 		const topic = args[1];
 		console.log(runHelp(topic));
+		break;
+	}
+
+	case "refine": {
+		const slug = args[1];
+		if (!slug) {
+			console.error(
+				"usage: bun run lab refine <topic-slug> [--section Findings] [--max-passes 10] [--visible]",
+			);
+			process.exit(1);
+		}
+		const sectionIdx = args.indexOf("--section");
+		const section = sectionIdx >= 0 ? args[sectionIdx + 1] : "Findings";
+		const maxIdx = args.indexOf("--max-passes");
+		const maxPasses = maxIdx >= 0 ? parseInt(args[maxIdx + 1], 10) : undefined;
+		const visible = args.includes("--visible");
+		const result = await runRefine(labRoot, slug, {
+			section,
+			maxPasses,
+			visible,
+		});
+		if (result.converged) {
+			console.log(`converged after ${result.totalRounds} round(s)`);
+		} else {
+			console.log(`did not converge after ${result.totalRounds} round(s)`);
+		}
 		break;
 	}
 
