@@ -149,52 +149,67 @@ describe("content validation", () => {
 	});
 
 	it("warns on contradicted claims in working notes", async () => {
-		await createTopic(labRoot, "Contradicted Test")
-		const hubPath = join(labRoot, "topics", "contradicted-test", "contradicted-test.md")
-		let hub = await Bun.file(hubPath).text()
+		await createTopic(labRoot, "Contradicted Test");
+		const hubPath = join(
+			labRoot,
+			"topics",
+			"contradicted-test",
+			"contradicted-test.md",
+		);
+		let hub = await Bun.file(hubPath).text();
 		hub = hub.replace(
 			"## Findings\n",
 			"## Findings\n\n- Hotels are cheaper near stations *(contradicted)*\n",
-		)
-		await Bun.write(hubPath, hub)
+		);
+		await Bun.write(hubPath, hub);
 
-		const issues = await validateTopic(labRoot, "contradicted-test")
-		const contradicted = issues.filter((i) => i.rule === "contradicted-claim")
-		expect(contradicted).toHaveLength(1)
-		expect(contradicted[0].severity).toBe("warn")
-	})
+		const issues = await validateTopic(labRoot, "contradicted-test");
+		const contradicted = issues.filter((i) => i.rule === "contradicted-claim");
+		expect(contradicted).toHaveLength(1);
+		expect(contradicted[0].severity).toBe("warn");
+	});
 
 	it("errors on contradicted claims in distilled notes", async () => {
-		await createTopic(labRoot, "Contradicted Distilled")
-		const hubPath = join(labRoot, "topics", "contradicted-distilled", "contradicted-distilled.md")
-		let hub = await Bun.file(hubPath).text()
-		hub = hub.replace("status: working", "status: distilled")
+		await createTopic(labRoot, "Contradicted Distilled");
+		const hubPath = join(
+			labRoot,
+			"topics",
+			"contradicted-distilled",
+			"contradicted-distilled.md",
+		);
+		let hub = await Bun.file(hubPath).text();
+		hub = hub.replace("status: working", "status: distilled");
 		hub = hub.replace(
 			"## Findings\n",
 			"## Findings\n\n- Hotels are cheaper near stations *(contradicted)*\n",
-		)
-		await Bun.write(hubPath, hub)
+		);
+		await Bun.write(hubPath, hub);
 
-		const issues = await validateTopic(labRoot, "contradicted-distilled")
-		const contradicted = issues.filter((i) => i.rule === "contradicted-claim")
-		expect(contradicted).toHaveLength(1)
-		expect(contradicted[0].severity).toBe("error")
-	})
+		const issues = await validateTopic(labRoot, "contradicted-distilled");
+		const contradicted = issues.filter((i) => i.rule === "contradicted-claim");
+		expect(contradicted).toHaveLength(1);
+		expect(contradicted[0].severity).toBe("error");
+	});
 
 	it("does not flag unsupported as bare claim (it has a marker)", async () => {
-		await createTopic(labRoot, "Unsupported Marker")
-		const hubPath = join(labRoot, "topics", "unsupported-marker", "unsupported-marker.md")
-		let hub = await Bun.file(hubPath).text()
+		await createTopic(labRoot, "Unsupported Marker");
+		const hubPath = join(
+			labRoot,
+			"topics",
+			"unsupported-marker",
+			"unsupported-marker.md",
+		);
+		let hub = await Bun.file(hubPath).text();
 		hub = hub.replace(
 			"## Findings\n",
 			"## Findings\n\n- Something claimed *(unsupported)*\n",
-		)
-		await Bun.write(hubPath, hub)
+		);
+		await Bun.write(hubPath, hub);
 
-		const issues = await validateTopic(labRoot, "unsupported-marker")
-		const bare = issues.filter((i) => i.rule === "bare-claim")
-		expect(bare).toHaveLength(0)
-	})
+		const issues = await validateTopic(labRoot, "unsupported-marker");
+		const bare = issues.filter((i) => i.rule === "bare-claim");
+		expect(bare).toHaveLength(0);
+	});
 
 	it("errors on empty Intent section in distilled hub", async () => {
 		await createTopic(labRoot, "Distilled Empty");

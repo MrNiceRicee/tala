@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
-import { Effect, Either } from "effect";
+import { Effect } from "effect";
 import { loadConfig } from "../orchestrator/config";
 import { loadTopicCriteria } from "../orchestrator/criteria";
 import {
@@ -32,8 +32,8 @@ export async function buildRefineContext(
 		const raw = await Bun.file(hubPath).text();
 		hubContent = raw;
 		const parsed = parseFrontmatter(raw);
-		if (Either.isRight(parsed)) {
-			const md = parseMarkdown(parsed.right.content);
+		if (parsed.ok) {
+			const md = parseMarkdown(parsed.value.content);
 			section = md.sections.get(sectionName) ?? "";
 		}
 	}

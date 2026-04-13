@@ -1,9 +1,9 @@
 import { Schema } from "effect";
 
-export const NoteStatus = Schema.Literal("sketch", "working", "distilled");
+export const NoteStatus = Schema.Literals(["sketch", "working", "distilled"]);
 export type NoteStatus = typeof NoteStatus.Type;
 
-export const NoteType = Schema.Literal("hub", "source", "note", "computation");
+export const NoteType = Schema.Literals(["hub", "source", "note", "computation"]);
 export type NoteType = typeof NoteType.Type;
 
 export const BaseFrontmatter = Schema.Struct({
@@ -62,21 +62,21 @@ export const CLAIM_MARKERS = {
 		label: "contradicted",
 		description: "sources disagree on this claim",
 	},
-} as const satisfies Record<string, { label: string; description: string }>
+} as const satisfies Record<string, { label: string; description: string }>;
 
 export const CLAIM_MARKER_LABELS = Object.values(CLAIM_MARKERS).map(
 	(m) => m.label,
-) as [string, ...string[]]
+) as [string, ...string[]];
 
-export const ClaimMarkerKind = Schema.Literal(...CLAIM_MARKER_LABELS)
-export type ClaimMarkerKind = typeof ClaimMarkerKind.Type
+export const ClaimMarkerKind = Schema.Literals(CLAIM_MARKER_LABELS);
+export type ClaimMarkerKind = typeof ClaimMarkerKind.Type;
 
-export type SeverityLevel = "error" | "warn" | "info" | "ignore"
+export type SeverityLevel = "error" | "warn" | "info" | "ignore";
 
 export const MARKER_SEVERITY: Record<string, Record<string, SeverityLevel>> = {
-	unsupported:     { sketch: "ignore", working: "warn",   distilled: "error" },
-	"single-source": { sketch: "ignore", working: "info",   distilled: "warn" },
-	hypothesis:      { sketch: "ignore", working: "ignore", distilled: "ignore" },
-	contradicted:    { sketch: "ignore", working: "warn",   distilled: "error" },
-	"bare-claim":    { sketch: "ignore", working: "warn",   distilled: "error" },
-}
+	unsupported: { sketch: "ignore", working: "warn", distilled: "error" },
+	"single-source": { sketch: "ignore", working: "info", distilled: "warn" },
+	hypothesis: { sketch: "ignore", working: "ignore", distilled: "ignore" },
+	contradicted: { sketch: "ignore", working: "warn", distilled: "error" },
+	"bare-claim": { sketch: "ignore", working: "warn", distilled: "error" },
+};

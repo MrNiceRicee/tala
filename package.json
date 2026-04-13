@@ -9,7 +9,7 @@
     "lint:fix": "biome check --write src/ test/"
   },
   "dependencies": {
-    "effect": "latest",
+    "effect": "4.0.0-beta.48",
     "gray-matter": "^4.0.3",
     "remark-frontmatter": "^5.0.0",
     "remark-parse": "^11.0.0",

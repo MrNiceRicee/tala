@@ -1,7 +1,6 @@
 import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
-import { Either } from "effect";
 import { parseFrontmatter } from "../parser/frontmatter";
 
 export interface SearchHit {
@@ -40,12 +39,8 @@ async function searchDir(
 
 		const raw = await Bun.file(filePath).text();
 		const parsed = parseFrontmatter(raw);
-		const title = Either.isRight(parsed)
-			? (parsed.right.data.title as string)
-			: file.name;
-		const status = Either.isRight(parsed)
-			? (parsed.right.data.status as string)
-			: "sketch";
+		const title = parsed.ok ? (parsed.value.data.title as string) : file.name;
+		const status = parsed.ok ? (parsed.value.data.status as string) : "sketch";
 
 		const lines = raw.split("\n");
 		const lowerQuery = query.toLowerCase();

@@ -68,32 +68,32 @@ describe("extractClaimMarkers", () => {
 	});
 
 	it("finds unsupported markers", () => {
-		const md = "- Hotels average 12,000 yen *(unsupported)*"
-		const markers = extractClaimMarkers(md)
-		expect(markers).toHaveLength(1)
-		expect(markers[0].kind).toBe("unsupported")
-	})
+		const md = "- Hotels average 12,000 yen *(unsupported)*";
+		const markers = extractClaimMarkers(md);
+		expect(markers).toHaveLength(1);
+		expect(markers[0].kind).toBe("unsupported");
+	});
 
 	it("finds single-source markers", () => {
-		const md = "- Shinjuku has most transit *(single-source)*"
-		const markers = extractClaimMarkers(md)
-		expect(markers).toHaveLength(1)
-		expect(markers[0].kind).toBe("single-source")
-	})
+		const md = "- Shinjuku has most transit *(single-source)*";
+		const markers = extractClaimMarkers(md);
+		expect(markers).toHaveLength(1);
+		expect(markers[0].kind).toBe("single-source");
+	});
 
 	it("finds contradicted markers", () => {
-		const md = "- Capsule hotels are cheaper *(contradicted)*"
-		const markers = extractClaimMarkers(md)
-		expect(markers).toHaveLength(1)
-		expect(markers[0].kind).toBe("contradicted")
-	})
+		const md = "- Capsule hotels are cheaper *(contradicted)*";
+		const markers = extractClaimMarkers(md);
+		expect(markers).toHaveLength(1);
+		expect(markers[0].kind).toBe("contradicted");
+	});
 
 	it("finds contradicted callout markers", () => {
-		const md = "> [!contradicted]\n> Sources disagree on this."
-		const markers = extractClaimMarkers(md)
-		expect(markers).toHaveLength(1)
-		expect(markers[0].kind).toBe("contradicted")
-	})
+		const md = "> [!contradicted]\n> Sources disagree on this.";
+		const markers = extractClaimMarkers(md);
+		expect(markers).toHaveLength(1);
+		expect(markers[0].kind).toBe("contradicted");
+	});
 
 	it("finds all four marker types in one document", () => {
 		const md = [
@@ -101,15 +101,15 @@ describe("extractClaimMarkers", () => {
 			"- Claim B *(single-source)*",
 			"- Claim C *(hypothesis)*",
 			"- Claim D *(contradicted)*",
-		].join("\n")
-		const markers = extractClaimMarkers(md)
-		expect(markers).toHaveLength(4)
-		const kinds = markers.map((m) => m.kind)
-		expect(kinds).toContain("unsupported")
-		expect(kinds).toContain("single-source")
-		expect(kinds).toContain("hypothesis")
-		expect(kinds).toContain("contradicted")
-	})
+		].join("\n");
+		const markers = extractClaimMarkers(md);
+		expect(markers).toHaveLength(4);
+		const kinds = markers.map((m) => m.kind);
+		expect(kinds).toContain("unsupported");
+		expect(kinds).toContain("single-source");
+		expect(kinds).toContain("hypothesis");
+		expect(kinds).toContain("contradicted");
+	});
 });
 
 describe("extractSections", () => {

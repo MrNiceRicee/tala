@@ -1,6 +1,6 @@
-import { Effect, Schema } from "effect"
-import { existsSync } from "node:fs"
-import { join } from "node:path"
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { Effect, Schema } from "effect";
 
 const LabConfigSchema = Schema.Struct({
 	convergenceK: Schema.Number,
@@ -8,9 +8,9 @@ const LabConfigSchema = Schema.Struct({
 	judgeCount: Schema.Number,
 	staleAfterDays: Schema.Number,
 	warnUnverifiedAfterDays: Schema.Number,
-})
+});
 
-export type LabConfig = typeof LabConfigSchema.Type
+export type LabConfig = typeof LabConfigSchema.Type;
 
 export const DEFAULT_CONFIG: LabConfig = {
 	convergenceK: 2,
@@ -18,14 +18,14 @@ export const DEFAULT_CONFIG: LabConfig = {
 	judgeCount: 3,
 	staleAfterDays: 60,
 	warnUnverifiedAfterDays: 30,
-}
+};
 
 export function loadConfig(labRoot: string): Effect.Effect<LabConfig> {
 	return Effect.sync(() => {
-		const configPath = join(labRoot, "lab.config.ts")
+		const configPath = join(labRoot, "lab.config.ts");
 		if (!existsSync(configPath)) {
-			return DEFAULT_CONFIG
+			return DEFAULT_CONFIG;
 		}
-		return DEFAULT_CONFIG
-	})
+		return DEFAULT_CONFIG;
+	});
 }

@@ -1,7 +1,6 @@
 import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
-import { Either } from "effect";
 import { parseFrontmatter } from "../parser/frontmatter";
 import { parseMarkdown } from "../parser/markdown";
 import { CLAIM_MARKERS, MARKER_SEVERITY, type SeverityLevel } from "../schema";
@@ -9,14 +8,19 @@ import { CLAIM_MARKERS, MARKER_SEVERITY, type SeverityLevel } from "../schema";
 export type Severity = SeverityLevel;
 
 function isSeverityLevel(value: unknown): value is SeverityLevel {
-	return value === "error" || value === "warn" || value === "info" || value === "ignore"
+	return (
+		value === "error" ||
+		value === "warn" ||
+		value === "info" ||
+		value === "ignore"
+	);
 }
 
 function getSeverity(marker: string, status: string): SeverityLevel {
-	const entry = MARKER_SEVERITY[marker]
-	if (!entry) return "ignore"
-	const value = entry[status]
-	return isSeverityLevel(value) ? value : "ignore"
+	const entry = MARKER_SEVERITY[marker];
+	if (!entry) return "ignore";
+	const value = entry[status];
+	return isSeverityLevel(value) ? value : "ignore";
 }
 
 export interface ValidationIssue {
@@ -34,9 +38,12 @@ interface NoteInfo {
 	content: string;
 }
 
-function getString(data: Record<string, unknown>, key: string): string | undefined {
-	const value = data[key]
-	return typeof value === "string" ? value : undefined
+function getString(
+	data: Record<string, unknown>,
+	key: string,
+): string | undefined {
+	const value = data[key];
+	return typeof value === "string" ? value : undefined;
 }
 
 async function readNotes(
@@ -55,12 +62,12 @@ async function readNotes(
 		const raw = await Bun.file(filePath).text();
 		const parsed = parseFrontmatter(raw);
 
-		if (Either.isRight(parsed)) {
+		if (parsed.ok) {
 			notes.push({
 				path: filePath,
 				relativePath: subdir ? `${subdir}/${file.name}` : file.name,
-				data: parsed.right.data,
-				content: parsed.right.content,
+				data: parsed.value.data,
+				content: parsed.value.content,
 			});
 		} else {
 			notes.push({
@@ -75,59 +82,59 @@ async function readNotes(
 	return notes;
 }
 
-const allMarkerLabels = Object.values(CLAIM_MARKERS).map((m) => m.label)
+const allMarkerLabels = Object.values(CLAIM_MARKERS).map((m) => m.label);
 const anyMarkerPattern = new RegExp(
 	`\\*\\((${allMarkerLabels.join("|")})\\)\\*`,
-)
+);
 
 function checkClaimsInFindings(
 	note: NoteInfo,
 	status: string,
 ): ValidationIssue[] {
-	if (status === "sketch") return []
+	if (status === "sketch") return [];
 
-	const issues: ValidationIssue[] = []
-	const md = parseMarkdown(note.content)
-	const findings = md.sections.get("Findings")
-	if (!findings) return []
+	const issues: ValidationIssue[] = [];
+	const md = parseMarkdown(note.content);
+	const findings = md.sections.get("Findings");
+	if (!findings) return [];
 
-	const lines = findings.split("\n")
+	const lines = findings.split("\n");
 
 	for (const line of lines) {
-		const trimmed = line.trim()
+		const trimmed = line.trim();
 		if (!trimmed.startsWith("- ") || trimmed === "- " || trimmed === "-")
-			continue
+			continue;
 
-		const claim = trimmed.slice(2)
-		const hasWikilink = /\[\[.+\]\]/.test(claim)
-		const hasMarker = anyMarkerPattern.test(claim)
+		const claim = trimmed.slice(2);
+		const hasWikilink = /\[\[.+\]\]/.test(claim);
+		const hasMarker = anyMarkerPattern.test(claim);
 
 		if (!hasWikilink && !hasMarker) {
-			const severity = getSeverity("bare-claim", status)
+			const severity = getSeverity("bare-claim", status);
 			if (severity !== "ignore") {
 				issues.push({
 					severity,
 					rule: "bare-claim",
 					file: note.relativePath,
 					message: `bare claim in Findings: "${claim.slice(0, 60)}${claim.length > 60 ? "..." : ""}"`,
-				})
+				});
 			}
 		}
 
 		if (/\*\(contradicted\)\*/.test(claim)) {
-			const severity = getSeverity("contradicted", status)
+			const severity = getSeverity("contradicted", status);
 			if (severity !== "ignore") {
 				issues.push({
 					severity,
 					rule: "contradicted-claim",
 					file: note.relativePath,
 					message: `contradicted claim in Findings: "${claim.slice(0, 60)}${claim.length > 60 ? "..." : ""}"`,
-				})
+				});
 			}
 		}
 	}
 
-	return issues
+	return issues;
 }
 
 export async function validateTopic(
@@ -229,8 +236,8 @@ export async function validateTopic(
 
 	// content: claims in findings
 	for (const note of allNotes) {
-		const status = getString(note.data, "status") ?? "sketch"
-		issues.push(...checkClaimsInFindings(note, status))
+		const status = getString(note.data, "status") ?? "sketch";
+		issues.push(...checkClaimsInFindings(note, status));
 	}
 
 	// content: empty required hub sections

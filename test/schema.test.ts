@@ -2,15 +2,15 @@ import { describe, expect, it } from "bun:test";
 import { Schema } from "effect";
 import {
 	BaseFrontmatter,
-	ComputationFrontmatter,
-	HubFrontmatter,
-	NoteStatus,
-	NoteType,
-	NoteFrontmatter,
-	SourceFrontmatter,
 	CLAIM_MARKERS,
 	ClaimMarkerKind,
+	ComputationFrontmatter,
+	HubFrontmatter,
 	MARKER_SEVERITY,
+	NoteFrontmatter,
+	NoteStatus,
+	NoteType,
+	SourceFrontmatter,
 } from "../src/schema";
 
 describe("NoteStatus", () => {
@@ -131,63 +131,63 @@ describe("ComputationFrontmatter", () => {
 
 describe("CLAIM_MARKERS", () => {
 	it("has all four marker kinds", () => {
-		expect(CLAIM_MARKERS.unsupported).toBeDefined()
-		expect(CLAIM_MARKERS["single-source"]).toBeDefined()
-		expect(CLAIM_MARKERS.hypothesis).toBeDefined()
-		expect(CLAIM_MARKERS.contradicted).toBeDefined()
-	})
+		expect(CLAIM_MARKERS.unsupported).toBeDefined();
+		expect(CLAIM_MARKERS["single-source"]).toBeDefined();
+		expect(CLAIM_MARKERS.hypothesis).toBeDefined();
+		expect(CLAIM_MARKERS.contradicted).toBeDefined();
+	});
 
 	it("each marker has label and description", () => {
 		for (const marker of Object.values(CLAIM_MARKERS)) {
-			expect(typeof marker.label).toBe("string")
-			expect(typeof marker.description).toBe("string")
-			expect(marker.label.length).toBeGreaterThan(0)
-			expect(marker.description.length).toBeGreaterThan(0)
+			expect(typeof marker.label).toBe("string");
+			expect(typeof marker.description).toBe("string");
+			expect(marker.label.length).toBeGreaterThan(0);
+			expect(marker.description.length).toBeGreaterThan(0);
 		}
-	})
+	});
 
 	it("labels are unique", () => {
-		const labels = Object.values(CLAIM_MARKERS).map((m) => m.label)
-		expect(new Set(labels).size).toBe(labels.length)
-	})
-})
+		const labels = Object.values(CLAIM_MARKERS).map((m) => m.label);
+		expect(new Set(labels).size).toBe(labels.length);
+	});
+});
 
 describe("ClaimMarkerKind", () => {
-	const decode = Schema.decodeUnknownSync(ClaimMarkerKind)
+	const decode = Schema.decodeUnknownSync(ClaimMarkerKind);
 
 	it("accepts all marker labels", () => {
-		expect(decode("unsupported")).toBe("unsupported")
-		expect(decode("single-source")).toBe("single-source")
-		expect(decode("hypothesis")).toBe("hypothesis")
-		expect(decode("contradicted")).toBe("contradicted")
-	})
+		expect(decode("unsupported")).toBe("unsupported");
+		expect(decode("single-source")).toBe("single-source");
+		expect(decode("hypothesis")).toBe("hypothesis");
+		expect(decode("contradicted")).toBe("contradicted");
+	});
 
 	it("rejects unknown labels", () => {
-		expect(() => decode("proven")).toThrow()
-		expect(() => decode("unverified")).toThrow()
-	})
-})
+		expect(() => decode("proven")).toThrow();
+		expect(() => decode("unverified")).toThrow();
+	});
+});
 
 describe("MARKER_SEVERITY", () => {
 	it("has entries for all claim markers", () => {
 		for (const marker of Object.values(CLAIM_MARKERS)) {
-			expect(MARKER_SEVERITY[marker.label]).toBeDefined()
+			expect(MARKER_SEVERITY[marker.label]).toBeDefined();
 		}
-	})
+	});
 
 	it("has entries for bare-claim", () => {
-		expect(MARKER_SEVERITY["bare-claim"]).toBeDefined()
-	})
+		expect(MARKER_SEVERITY["bare-claim"]).toBeDefined();
+	});
 
 	it("returns correct severity for unsupported in distilled", () => {
-		expect(MARKER_SEVERITY.unsupported.distilled).toBe("error")
-	})
+		expect(MARKER_SEVERITY.unsupported.distilled).toBe("error");
+	});
 
 	it("returns correct severity for hypothesis in distilled", () => {
-		expect(MARKER_SEVERITY.hypothesis.distilled).toBe("ignore")
-	})
+		expect(MARKER_SEVERITY.hypothesis.distilled).toBe("ignore");
+	});
 
 	it("returns correct severity for single-source in working", () => {
-		expect(MARKER_SEVERITY["single-source"].working).toBe("info")
-	})
-})
+		expect(MARKER_SEVERITY["single-source"].working).toBe("info");
+	});
+});

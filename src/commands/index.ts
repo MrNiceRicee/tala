@@ -1,7 +1,6 @@
 import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
-import { Either } from "effect";
 import { parseFrontmatter } from "../parser/frontmatter";
 
 export interface IndexResult {
@@ -38,11 +37,11 @@ export async function refreshIndex(labRoot: string): Promise<IndexResult> {
 		const raw = await Bun.file(hubPath).text();
 		const parsed = parseFrontmatter(raw);
 
-		if (Either.isRight(parsed)) {
+		if (parsed.ok) {
 			entries.push({
-				title: parsed.right.data.title as string,
+				title: parsed.value.data.title as string,
 				slug: dir.name,
-				status: parsed.right.data.status as string,
+				status: parsed.value.data.status as string,
 			});
 		}
 	}

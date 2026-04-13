@@ -1,4 +1,4 @@
-import { CLAIM_MARKERS, type ClaimMarkerKind } from "../schema"
+import { CLAIM_MARKERS, type ClaimMarkerKind } from "../schema";
 
 export interface Wikilink {
 	target: string;
@@ -43,53 +43,51 @@ export function extractWikilinks(content: string): Wikilink[] {
 	return links;
 }
 
-const markerLabels = Object.values(CLAIM_MARKERS).map((m) => m.label)
+const markerLabels = Object.values(CLAIM_MARKERS).map((m) => m.label);
 const inlineMarkerPattern = new RegExp(
 	`\\*\\((${markerLabels.join("|")})\\)\\*`,
 	"g",
-)
-const calloutPattern = new RegExp(
-	`^>\\s*\\[!(${markerLabels.join("|")})\\]`,
-)
+);
+const calloutPattern = new RegExp(`^>\\s*\\[!(${markerLabels.join("|")})\\]`);
 
 export function extractClaimMarkers(content: string): ClaimMarker[] {
-	const markers: ClaimMarker[] = []
-	const lines = content.split("\n")
-	const validKinds = new Set<string>(markerLabels)
+	const markers: ClaimMarker[] = [];
+	const lines = content.split("\n");
+	const validKinds = new Set<string>(markerLabels);
 
 	for (let i = 0; i < lines.length; i++) {
-		const line = lines[i]
+		const line = lines[i];
 
-		inlineMarkerPattern.lastIndex = 0
+		inlineMarkerPattern.lastIndex = 0;
 		for (
 			let match = inlineMarkerPattern.exec(line);
 			match !== null;
 			match = inlineMarkerPattern.exec(line)
 		) {
-			const kind = match[1]
+			const kind = match[1];
 			if (validKinds.has(kind)) {
 				markers.push({
 					kind: kind as ClaimMarkerKind,
 					line: line.trim(),
 					lineNumber: i + 1,
-				})
+				});
 			}
 		}
 
-		const calloutMatch = line.match(calloutPattern)
+		const calloutMatch = line.match(calloutPattern);
 		if (calloutMatch) {
-			const kind = calloutMatch[1]
+			const kind = calloutMatch[1];
 			if (validKinds.has(kind)) {
 				markers.push({
 					kind: kind as ClaimMarkerKind,
 					line: line.trim(),
 					lineNumber: i + 1,
-				})
+				});
 			}
 		}
 	}
 
-	return markers
+	return markers;
 }
 
 export function extractSections(content: string): Map<string, string> {
