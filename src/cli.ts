@@ -1,12 +1,14 @@
+import { join } from "node:path";
 import { runCheck } from "./commands/check";
 import { runComputation } from "./commands/compute";
+import { generateConventions } from "./commands/conventions";
 import { runGather } from "./commands/gather";
-import { runVerify } from "./commands/verify";
 import { runHelp } from "./commands/help";
 import { refreshIndex } from "./commands/index";
 import { createTopic } from "./commands/new";
 import { search } from "./commands/search";
 import { runValidation } from "./commands/validate";
+import { runVerify } from "./commands/verify";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -20,6 +22,7 @@ const commandDescriptions: Record<string, string> = {
 	compute: "run a deterministic computation script",
 	gather: "collect sources for a topic",
 	verify: "check and corroborate claims",
+	conventions: "regenerate CONVENTIONS.md from definitions",
 	help: "show conventions and usage",
 };
 
@@ -136,31 +139,47 @@ switch (command) {
 	}
 
 	case "gather": {
-		const slug = args[1]
+		const slug = args[1];
 		if (!slug) {
-			console.error("usage: bun run lab gather <topic-slug> [--rounds N] [--visible]")
-			process.exit(1)
+			console.error(
+				"usage: bun run lab gather <topic-slug> [--rounds N] [--visible]",
+			);
+			process.exit(1);
 		}
-		const roundsIdx = args.indexOf("--rounds")
-		const rounds = roundsIdx >= 0 ? parseInt(args[roundsIdx + 1], 10) || 1 : 1
-		const visible = args.includes("--visible")
-		const result = await runGather(labRoot, slug, { rounds, visible })
-		console.log(`gather complete: ${result.sourcesAdded} source(s) added in ${result.roundsCompleted} round(s)`)
-		break
+		const roundsIdx = args.indexOf("--rounds");
+		const rounds = roundsIdx >= 0 ? parseInt(args[roundsIdx + 1], 10) || 1 : 1;
+		const visible = args.includes("--visible");
+		const result = await runGather(labRoot, slug, { rounds, visible });
+		console.log(
+			`gather complete: ${result.sourcesAdded} source(s) added in ${result.roundsCompleted} round(s)`,
+		);
+		break;
 	}
 
 	case "verify": {
-		const slug = args[1]
+		const slug = args[1];
 		if (!slug) {
-			console.error("usage: bun run lab verify <topic-slug> [--rounds N] [--visible]")
-			process.exit(1)
+			console.error(
+				"usage: bun run lab verify <topic-slug> [--rounds N] [--visible]",
+			);
+			process.exit(1);
 		}
-		const roundsIdx = args.indexOf("--rounds")
-		const rounds = roundsIdx >= 0 ? parseInt(args[roundsIdx + 1], 10) || 1 : 1
-		const visible = args.includes("--visible")
-		const result = await runVerify(labRoot, slug, { rounds, visible })
-		console.log(`verify complete: ${result.claimsChecked} checked, ${result.markersChanged} changed in ${result.roundsCompleted} round(s)`)
-		break
+		const roundsIdx = args.indexOf("--rounds");
+		const rounds = roundsIdx >= 0 ? parseInt(args[roundsIdx + 1], 10) || 1 : 1;
+		const visible = args.includes("--visible");
+		const result = await runVerify(labRoot, slug, { rounds, visible });
+		console.log(
+			`verify complete: ${result.claimsChecked} checked, ${result.markersChanged} changed in ${result.roundsCompleted} round(s)`,
+		);
+		break;
+	}
+
+	case "conventions": {
+		const content = generateConventions();
+		const conventionsPath = join(labRoot, "CONVENTIONS.md");
+		await Bun.write(conventionsPath, content);
+		console.log("CONVENTIONS.md regenerated from TypeScript definitions");
+		break;
 	}
 
 	case "help": {

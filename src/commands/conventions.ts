@@ -1,15 +1,33 @@
-# Research Lab Conventions
+import { DOMAIN_CRITERIA } from "../orchestrator/criteria";
+import { CLAIM_MARKERS, MARKER_SEVERITY } from "../schema";
 
-This file is generated from TypeScript definitions. Run `bun run lab conventions` to regenerate.
+export function generateConventions(): string {
+	const markerTable = Object.values(CLAIM_MARKERS)
+		.map((m) => `| *(${m.label})* | ${m.description} |`)
+		.join("\n");
+
+	const severityRows = Object.entries(MARKER_SEVERITY)
+		.map(([marker, levels]) => {
+			const sketch = levels.sketch ?? "ignore";
+			const working = levels.working ?? "ignore";
+			const distilled = levels.distilled ?? "ignore";
+			return `    ${marker.padEnd(30)} sketch: ${sketch.padEnd(8)} working: ${working.padEnd(8)} distilled: ${distilled}`;
+		})
+		.join("\n");
+
+	const domainList = Object.keys(DOMAIN_CRITERIA)
+		.map((d) => `    ${d}`)
+		.join("\n");
+
+	return `# Research Lab Conventions
+
+This file is generated from TypeScript definitions. Run \`bun run lab conventions\` to regenerate.
 
 ## Claim markers
 
 | Marker | Meaning |
 |---|---|
-| *(unsupported)* | no evidence at all |
-| *(single-source)* | one source, needs corroboration |
-| *(hypothesis)* | reasoned inference, not directly provable |
-| *(contradicted)* | sources disagree on this claim |
+${markerTable}
 | [[source-link]] | verified, the link is the proof |
 
 Block-level markers use Obsidian callouts: > [!hypothesis], > [!contradicted], etc.
@@ -54,19 +72,13 @@ Hub files may add: slug, tags, aliases, domain.
 
 ## Validation severity
 
-    unsupported                    sketch: ignore   working: warn     distilled: error
-    single-source                  sketch: ignore   working: info     distilled: warn
-    hypothesis                     sketch: ignore   working: ignore   distilled: ignore
-    contradicted                   sketch: ignore   working: warn     distilled: error
-    bare-claim                     sketch: ignore   working: warn     distilled: error
+${severityRows}
 
 ## Available domains
 
-    software
-    travel
-    pharmacy
+${domainList}
 
-Set a topic's domain in hub frontmatter: `domain: software`
+Set a topic's domain in hub frontmatter: \`domain: software\`
 
 ## Context loading for AI agents
 
@@ -79,3 +91,5 @@ Set a topic's domain in hub frontmatter: `domain: software`
 ## CLI commands
 
 Run bun run lab help for full command reference.
+`;
+}
