@@ -1,8 +1,6 @@
 import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
-import { Effect } from "effect";
-import { defaultExecutor } from "../orchestrator/agent";
 import { loadTopicCriteria } from "../orchestrator/criteria";
 import { gathererPrompt } from "../orchestrator/prompts";
 import { parseFrontmatter } from "../parser/frontmatter";
@@ -62,59 +60,44 @@ export async function buildGatherContext(
 	};
 }
 
-export async function runGather(
+export async function prepareGather(
 	labRoot: string,
 	slug: string,
-	options: { rounds: number; visible?: boolean },
-): Promise<{ sourcesAdded: number; roundsCompleted: number }> {
-	let totalSourcesAdded = 0;
-	let roundsCompleted = 0;
-	const topicDir = join(labRoot, "topics", slug);
+): Promise<string> {
+	const context = await buildGatherContext(labRoot, slug);
+	const systemPrompt = gathererPrompt(context.criteria);
 
-	for (let round = 1; round <= options.rounds; round++) {
-		const context = await buildGatherContext(labRoot, slug);
-		const systemPrompt = gathererPrompt(context.criteria);
-		const input = [
-			`Topic: ${context.topicTitle}`,
-			"",
-			"Questions to research:",
-			context.questions || "(no questions yet)",
-			"",
-			context.existingSources
-				? `Existing sources (avoid duplicates): ${context.existingSources}`
-				: "No existing sources yet.",
-		].join("\n");
+	return `# Gather Context for: ${context.topicTitle}
 
-		console.log(`gather round ${round}/${options.rounds}...`);
+## System Prompt
 
-		await Effect.runPromise(
-			defaultExecutor({
-				mode: "interactive",
-				systemPrompt,
-				input,
-				cwd: topicDir,
-				visible: options.visible,
-			}),
-		);
+${systemPrompt}
 
-		const afterContext = await buildGatherContext(labRoot, slug);
-		const beforeCount = context.existingSources
-			? context.existingSources.split(", ").filter(Boolean).length
-			: 0;
-		const afterCount = afterContext.existingSources
-			? afterContext.existingSources.split(", ").filter(Boolean).length
-			: 0;
-		const added = afterCount - beforeCount;
+## Topic
 
-		totalSourcesAdded += added;
-		roundsCompleted = round;
+${context.topicTitle}
 
-		if (added === 0) {
-			console.log(`round ${round}: no new sources found, stopping early`);
-			break;
-		}
-		console.log(`round ${round}: ${added} new source(s) added`);
-	}
+## Questions to Research
 
-	return { sourcesAdded: totalSourcesAdded, roundsCompleted };
+${context.questions || "(no questions yet)"}
+
+## Existing Sources (avoid duplicates)
+
+${context.existingSources || "None yet."}
+
+## Working Directory
+
+topics/${slug}/
+
+## Instructions
+
+1. Search for sources related to the questions above
+2. For each source found, create a file in topics/${slug}/sources/ with frontmatter:
+   type: source, title, url, accessed, status: working, created, updated
+3. Extract key points into each source note
+4. Add new claims to the hub Findings section with *(unsupported)* or *(single-source)* markers
+5. Add new questions to the hub Questions section if gaps emerge
+6. Do not modify existing claims or their markers
+7. Follow CONVENTIONS.md
+`;
 }

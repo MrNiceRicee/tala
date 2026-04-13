@@ -2,13 +2,15 @@ import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { Effect } from "effect";
-import { defaultExecutor } from "../orchestrator/agent";
 import { loadConfig } from "../orchestrator/config";
 import { loadTopicCriteria } from "../orchestrator/criteria";
 import {
-	runTournament,
-	type TournamentResult,
-} from "../orchestrator/tournament";
+	adversaryPrompt,
+	criticPrompt,
+	judgePrompt,
+	reviserPrompt,
+	synthesizerPrompt,
+} from "../orchestrator/prompts";
 import { parseFrontmatter } from "../parser/frontmatter";
 import { extractWikilinks, parseMarkdown } from "../parser/markdown";
 
@@ -73,47 +75,69 @@ export async function buildRefineContext(
 	};
 }
 
-function generateRefineLog(
+export async function prepareRefine(
+	labRoot: string,
 	slug: string,
 	sectionName: string,
-	result: TournamentResult,
-): string {
-	const date = new Date().toISOString().split("T")[0];
-	const lines = [
-		"---",
-		"type: refine-log",
-		`title: Refine Log — ${slug}`,
-		`topic_slug: ${slug}`,
-		`section: ${sectionName}`,
-		`created: ${date}`,
-		"---",
-		"",
-		`# Refine Log — ${slug} (${sectionName})`,
-		"",
-	];
-	for (const round of result.rounds) {
-		lines.push(`## Round ${round.round}`, "");
-		lines.push(
-			`**Critic:** ${round.critique.slice(0, 200).replace(/\n/g, " ")}`,
-		);
-		lines.push(
-			`**Adversary:** ${round.challenges.slice(0, 200).replace(/\n/g, " ")}`,
-		);
-		lines.push(`**Winner:** ${round.winner}`);
-		const scoreEntries: string[] = [];
-		for (const [idx, score] of round.bordaScores) {
-			const label = idx === 1 ? "A" : idx === 2 ? "B" : "AB";
-			scoreEntries.push(`${label}=${score}`);
-		}
-		lines.push(`**Borda scores:** ${scoreEntries.join(", ")}`, "");
+): Promise<string> {
+	const context = await buildRefineContext(labRoot, slug, sectionName);
+	const config = Effect.runSync(loadConfig(labRoot));
+
+	if (!context.section) {
+		return `Section "${sectionName}" is empty or not found in ${slug}.`;
 	}
-	lines.push(
-		result.converged
-			? `**CONVERGED** after ${result.totalRounds} rounds.`
-			: `**Did not converge** after ${result.totalRounds} rounds (max reached).`,
-	);
-	lines.push("");
-	return lines.join("\n");
+
+	return `# Refine Tournament Protocol for: ${slug}
+
+## Section to Refine: ${sectionName}
+
+${context.section}
+
+## Source Notes
+
+${context.sources || "No sources available."}
+
+## Evaluation Criteria
+
+${context.criteria}
+
+## Agent Prompts
+
+### Critic (constructive, fresh agent)
+${criticPrompt(context.criteria)}
+
+### Adversary (destructive, fresh agent — must cite evidence for objections)
+${adversaryPrompt(context.criteria)}
+
+### Reviser (fresh agent)
+${reviserPrompt(context.criteria)}
+
+### Synthesizer (fresh agent)
+${synthesizerPrompt()}
+
+### Judge (3-${config.judgeCount} fresh agents, each sees shuffled anonymous proposals)
+${judgePrompt(context.criteria)}
+
+## Tournament Rules
+
+1. Each round: critic → adversary → reviser → synthesizer → judges
+2. Critic receives: the section + criteria
+3. Adversary receives: the section + source notes. Must cite evidence for objections.
+4. Reviser receives: section (A) + critique + adversary challenges → produces revision (B)
+5. Synthesizer receives: A + B → produces synthesis (AB)
+6. Judges receive: A, B, AB in RANDOMIZED ORDER with anonymous labels (Proposal 1, 2, 3)
+7. Each judge outputs: RANK: 1st=N, 2nd=N, 3rd=N
+8. Scoring: Borda count (1st=2pts, 2nd=1pt, 3rd=0pt)
+9. Winner becomes new incumbent
+10. If incumbent (A) wins ${config.convergenceK} consecutive rounds → CONVERGE
+11. Tiebreak favors incumbent
+12. Maximum ${config.maxPasses} rounds
+
+## After Convergence
+
+Run: bun run lab refine apply ${slug} --section "${sectionName}"
+Then provide the final refined section text via stdin.
+`;
 }
 
 function replaceSectionInHub(
@@ -125,6 +149,7 @@ function replaceSectionInHub(
 	const result: string[] = [];
 	let inTargetSection = false;
 	let replaced = false;
+
 	for (const line of lines) {
 		const headingMatch = line.match(/^## (.+)$/);
 		if (headingMatch) {
@@ -142,53 +167,31 @@ function replaceSectionInHub(
 			result.push(line);
 		}
 	}
+
 	if (!replaced) {
 		result.push(`\n## ${sectionName}\n\n${newSection}`);
 	}
 	return result.join("\n");
 }
 
-export async function runRefine(
+export async function applyRefine(
 	labRoot: string,
 	slug: string,
-	options: { section: string; maxPasses?: number; visible?: boolean },
-): Promise<TournamentResult> {
-	const context = await buildRefineContext(labRoot, slug, options.section);
-	const config = Effect.runSync(loadConfig(labRoot));
-
-	if (!context.section) {
-		console.log(`section "${options.section}" is empty or not found`);
-		return { converged: true, rounds: [], finalSection: "", totalRounds: 0 };
+	sectionName: string,
+	refinedSection: string,
+	logContent?: string,
+): Promise<void> {
+	const hubPath = join(labRoot, "topics", slug, `${slug}.md`);
+	if (!existsSync(hubPath)) {
+		throw new Error(`hub not found: ${hubPath}`);
 	}
 
-	console.log(`refining "${options.section}" section of ${slug}...`);
+	const hubContent = await Bun.file(hubPath).text();
+	const updated = replaceSectionInHub(hubContent, sectionName, refinedSection);
+	await Bun.write(hubPath, updated);
 
-	const result = await Effect.runPromise(
-		runTournament({
-			section: context.section,
-			sources: context.sources,
-			criteria: context.criteria,
-			maxPasses: options.maxPasses ?? config.maxPasses,
-			convergenceK: config.convergenceK,
-			judgeCount: config.judgeCount,
-			executor: defaultExecutor,
-			cwd: join(labRoot, "topics", slug),
-		}),
-	);
-
-	if (result.finalSection) {
-		const hubPath = join(labRoot, "topics", slug, `${slug}.md`);
-		const updatedHub = replaceSectionInHub(
-			context.hubContent,
-			options.section,
-			result.finalSection,
-		);
-		await Bun.write(hubPath, updatedHub);
+	if (logContent) {
+		const logPath = join(labRoot, "topics", slug, "refine-log.md");
+		await Bun.write(logPath, logContent);
 	}
-
-	const logContent = generateRefineLog(slug, options.section, result);
-	const logPath = join(labRoot, "topics", slug, "refine-log.md");
-	await Bun.write(logPath, logContent);
-
-	return result;
 }

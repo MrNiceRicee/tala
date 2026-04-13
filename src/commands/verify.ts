@@ -1,12 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { Effect } from "effect";
-import { defaultExecutor } from "../orchestrator/agent";
 import { loadTopicCriteria } from "../orchestrator/criteria";
-import {
-	verifierCheckPrompt,
-	verifierSearchPrompt,
-} from "../orchestrator/prompts";
+import { verifierSearchPrompt } from "../orchestrator/prompts";
 import { parseFrontmatter } from "../parser/frontmatter";
 import { extractWikilinks, parseMarkdown } from "../parser/markdown";
 
@@ -78,70 +73,81 @@ export async function extractClaimsForVerification(
 	return { withSources, needingCorroboration };
 }
 
-export async function runVerify(
+export interface SourceCheckResult {
+	claim: string;
+	source: string;
+	verdict: "supported" | "no-source-file";
+}
+
+export async function runSourceCheck(
 	labRoot: string,
 	slug: string,
-	options: { rounds: number; visible?: boolean },
-): Promise<{
-	claimsChecked: number;
-	markersChanged: number;
-	roundsCompleted: number;
-}> {
-	let totalChecked = 0;
-	let totalChanged = 0;
-	let roundsCompleted = 0;
+): Promise<SourceCheckResult[]> {
+	const claims = await extractClaimsForVerification(labRoot, slug);
+	const results: SourceCheckResult[] = [];
 	const topicDir = join(labRoot, "topics", slug);
 
-	for (let round = 1; round <= options.rounds; round++) {
-		console.log(`verify round ${round}/${options.rounds}...`);
-		const claims = await extractClaimsForVerification(labRoot, slug);
-		const criteria = await loadTopicCriteria(labRoot, slug);
-		let changedThisRound = 0;
-
-		for (const claim of claims.withSources) {
-			const sourcePath = join(topicDir, `${claim.sourceTarget}.md`);
-			if (!existsSync(sourcePath)) continue;
-			const sourceText = await Bun.file(sourcePath).text();
-			const systemPrompt = verifierCheckPrompt(criteria);
-			const input = `Claim: "${claim.text}"\n\nSource content:\n${sourceText}`;
-
-			const result = await Effect.runPromise(
-				defaultExecutor({ mode: "print", systemPrompt, input, cwd: topicDir }),
-			);
-			totalChecked++;
-			if (result.output.includes("CONTRADICTED")) {
-				changedThisRound++;
-				console.log(`  CONTRADICTED: ${claim.text.slice(0, 60)}`);
-			} else if (result.output.includes("PARTIAL")) {
-				console.log(`  PARTIAL: ${claim.text.slice(0, 60)}`);
-			}
-		}
-
-		if (claims.needingCorroboration.length > 0) {
-			const claimTexts = claims.needingCorroboration.map((c) => c.text);
-			const systemPrompt = verifierSearchPrompt(criteria, claimTexts);
-			await Effect.runPromise(
-				defaultExecutor({
-					mode: "interactive",
-					systemPrompt,
-					input: `Search for evidence for these ${claimTexts.length} claims. Work in the topic directory.`,
-					cwd: topicDir,
-					visible: options.visible,
-				}),
-			);
-		}
-
-		totalChanged += changedThisRound;
-		roundsCompleted = round;
-		if (changedThisRound === 0 && claims.needingCorroboration.length === 0) {
-			console.log(`round ${round}: no changes, stopping early`);
-			break;
+	for (const claim of claims.withSources) {
+		const sourcePath = join(topicDir, `${claim.sourceTarget}.md`);
+		if (!existsSync(sourcePath)) {
+			results.push({
+				claim: claim.text,
+				source: claim.sourceTarget,
+				verdict: "no-source-file",
+			});
+		} else {
+			results.push({
+				claim: claim.text,
+				source: claim.sourceTarget,
+				verdict: "supported",
+			});
 		}
 	}
 
-	return {
-		claimsChecked: totalChecked,
-		markersChanged: totalChanged,
-		roundsCompleted,
-	};
+	return results;
+}
+
+export async function prepareVerify(
+	labRoot: string,
+	slug: string,
+): Promise<string> {
+	const claims = await extractClaimsForVerification(labRoot, slug);
+	const criteria = await loadTopicCriteria(labRoot, slug);
+	const sourceChecks = await runSourceCheck(labRoot, slug);
+
+	const claimTexts = claims.needingCorroboration.map((c) => c.text);
+	const systemPrompt =
+		claimTexts.length > 0 ? verifierSearchPrompt(criteria, claimTexts) : "";
+
+	const sourceCheckReport = sourceChecks
+		.map((r) => `- ${r.verdict}: "${r.claim.slice(0, 60)}" → ${r.source}`)
+		.join("\n");
+
+	return `# Verify Context for: ${slug}
+
+## Source-Content Check (automated)
+
+${sourceCheckReport || "No claims with source links found."}
+
+## Claims Needing Corroboration
+
+${claimTexts.length > 0 ? claimTexts.map((c, i) => `${i + 1}. ${c}`).join("\n") : "All claims are verified or have no sources to check."}
+
+${systemPrompt ? `## System Prompt for Corroboration Search\n\n${systemPrompt}` : ""}
+
+## Working Directory
+
+topics/${slug}/
+
+## Instructions
+
+${
+	claimTexts.length > 0
+		? `1. For each claim above, search for corroborating or contradicting evidence
+2. If you find a source, create a source note in topics/${slug}/sources/
+3. Update claim markers in the hub based on what you find
+4. Follow CONVENTIONS.md`
+		: "No corroboration search needed — all claims are addressed."
+}
+`;
 }
