@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { runClaudeAgent } from "./agent";
+import type { AgentExecutor } from "./agent";
 import { runPipeline } from "./pipeline";
 import { buildTournamentRound } from "./pipelines";
 import { judgePrompt } from "./prompts";
@@ -99,6 +99,7 @@ export function runTournament(config: {
 	maxPasses: number;
 	convergenceK: number;
 	judgeCount: number;
+	executor: AgentExecutor;
 	cwd?: string;
 }): Effect.Effect<TournamentResult> {
 	return Effect.gen(function* () {
@@ -107,7 +108,10 @@ export function runTournament(config: {
 		const rounds: RoundResult[] = [];
 
 		for (let round = 1; round <= config.maxPasses; round++) {
-			const pipelineSteps = buildTournamentRound(config.criteria);
+			const pipelineSteps = buildTournamentRound(
+				config.criteria,
+				config.executor,
+			);
 			const initialArtifacts = new Map([
 				["section", incumbent],
 				["sources", config.sources],
@@ -129,7 +133,7 @@ export function runTournament(config: {
 			const rankings: JudgeRanking[] = [];
 
 			for (let j = 0; j < config.judgeCount; j++) {
-				const result = yield* runClaudeAgent({
+				const result = yield* config.executor({
 					mode: "print",
 					systemPrompt: judgeSystemPrompt,
 					input: judgeInput,

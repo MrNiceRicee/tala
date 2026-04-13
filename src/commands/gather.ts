@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { Effect } from "effect";
-import { runClaudeAgent } from "../orchestrator/agent";
+import { defaultExecutor } from "../orchestrator/agent";
 import { loadTopicCriteria } from "../orchestrator/criteria";
 import { gathererPrompt } from "../orchestrator/prompts";
 import { parseFrontmatter } from "../parser/frontmatter";
@@ -88,7 +88,7 @@ export async function runGather(
 		console.log(`gather round ${round}/${options.rounds}...`);
 
 		await Effect.runPromise(
-			runClaudeAgent({
+			defaultExecutor({
 				mode: "interactive",
 				systemPrompt,
 				input,

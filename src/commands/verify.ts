@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { Effect } from "effect";
-import { runClaudeAgent } from "../orchestrator/agent";
+import { defaultExecutor } from "../orchestrator/agent";
 import { loadTopicCriteria } from "../orchestrator/criteria";
 import {
 	verifierCheckPrompt,
@@ -106,7 +106,7 @@ export async function runVerify(
 			const input = `Claim: "${claim.text}"\n\nSource content:\n${sourceText}`;
 
 			const result = await Effect.runPromise(
-				runClaudeAgent({ mode: "print", systemPrompt, input, cwd: topicDir }),
+				defaultExecutor({ mode: "print", systemPrompt, input, cwd: topicDir }),
 			);
 			totalChecked++;
 			if (result.output.includes("CONTRADICTED")) {
@@ -121,7 +121,7 @@ export async function runVerify(
 			const claimTexts = claims.needingCorroboration.map((c) => c.text);
 			const systemPrompt = verifierSearchPrompt(criteria, claimTexts);
 			await Effect.runPromise(
-				runClaudeAgent({
+				defaultExecutor({
 					mode: "interactive",
 					systemPrompt,
 					input: `Search for evidence for these ${claimTexts.length} claims. Work in the topic directory.`,

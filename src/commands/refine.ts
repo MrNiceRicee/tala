@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { Effect } from "effect";
+import { defaultExecutor } from "../orchestrator/agent";
 import { loadConfig } from "../orchestrator/config";
 import { loadTopicCriteria } from "../orchestrator/criteria";
 import {
@@ -170,6 +171,7 @@ export async function runRefine(
 			maxPasses: options.maxPasses ?? config.maxPasses,
 			convergenceK: config.convergenceK,
 			judgeCount: config.judgeCount,
+			executor: defaultExecutor,
 			cwd: join(labRoot, "topics", slug),
 		}),
 	);

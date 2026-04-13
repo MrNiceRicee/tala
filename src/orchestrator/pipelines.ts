@@ -1,15 +1,23 @@
-import { type PipelineStep } from "./pipeline"
-import { runClaudeAgent } from "./agent"
-import { criticPrompt, adversaryPrompt, reviserPrompt, synthesizerPrompt } from "./prompts"
+import type { AgentExecutor } from "./agent";
+import type { PipelineStep } from "./pipeline";
+import {
+	adversaryPrompt,
+	criticPrompt,
+	reviserPrompt,
+	synthesizerPrompt,
+} from "./prompts";
 
-export function buildTournamentRound(criteria: string): PipelineStep[] {
+export function buildTournamentRound(
+	criteria: string,
+	executor: AgentExecutor,
+): PipelineStep[] {
 	return [
 		{
 			name: "critic",
 			receives: ["section", "criteria"],
 			outputKey: "critique",
 			run: (artifacts) =>
-				runClaudeAgent({
+				executor({
 					mode: "print",
 					systemPrompt: criticPrompt(criteria),
 					input: `Review this section:\n\n${artifacts.get("section") ?? ""}`,
@@ -20,7 +28,7 @@ export function buildTournamentRound(criteria: string): PipelineStep[] {
 			receives: ["section", "sources"],
 			outputKey: "challenges",
 			run: (artifacts) =>
-				runClaudeAgent({
+				executor({
 					mode: "print",
 					systemPrompt: adversaryPrompt(criteria),
 					input: `Section:\n${artifacts.get("section") ?? ""}\n\nSource notes:\n${artifacts.get("sources") ?? ""}`,
@@ -31,7 +39,7 @@ export function buildTournamentRound(criteria: string): PipelineStep[] {
 			receives: ["section", "critique", "challenges"],
 			outputKey: "revisionB",
 			run: (artifacts) =>
-				runClaudeAgent({
+				executor({
 					mode: "print",
 					systemPrompt: reviserPrompt(criteria),
 					input: `Section A:\n${artifacts.get("section") ?? ""}\n\nCritique:\n${artifacts.get("critique") ?? ""}\n\nAdversary challenges:\n${artifacts.get("challenges") ?? ""}`,
@@ -42,11 +50,11 @@ export function buildTournamentRound(criteria: string): PipelineStep[] {
 			receives: ["section", "revisionB"],
 			outputKey: "synthesisAB",
 			run: (artifacts) =>
-				runClaudeAgent({
+				executor({
 					mode: "print",
 					systemPrompt: synthesizerPrompt(),
 					input: `Version A:\n${artifacts.get("section") ?? ""}\n\nVersion B:\n${artifacts.get("revisionB") ?? ""}`,
 				}),
 		},
-	]
+	];
 }
