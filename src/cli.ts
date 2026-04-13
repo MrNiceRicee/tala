@@ -1,5 +1,6 @@
 import { runCheck } from "./commands/check";
 import { runComputation } from "./commands/compute";
+import { runGather } from "./commands/gather";
 import { runHelp } from "./commands/help";
 import { refreshIndex } from "./commands/index";
 import { createTopic } from "./commands/new";
@@ -16,6 +17,7 @@ const commandDescriptions: Record<string, string> = {
 	search: "search across topics",
 	check: "show staleness report",
 	compute: "run a deterministic computation script",
+	gather: "collect sources for a topic",
 	help: "show conventions and usage",
 };
 
@@ -129,6 +131,20 @@ switch (command) {
 			console.log(`${result.issueCount} item(s) need attention`);
 		}
 		break;
+	}
+
+	case "gather": {
+		const slug = args[1]
+		if (!slug) {
+			console.error("usage: bun run lab gather <topic-slug> [--rounds N] [--visible]")
+			process.exit(1)
+		}
+		const roundsIdx = args.indexOf("--rounds")
+		const rounds = roundsIdx >= 0 ? parseInt(args[roundsIdx + 1], 10) || 1 : 1
+		const visible = args.includes("--visible")
+		const result = await runGather(labRoot, slug, { rounds, visible })
+		console.log(`gather complete: ${result.sourcesAdded} source(s) added in ${result.roundsCompleted} round(s)`)
+		break
 	}
 
 	case "help": {
