@@ -100,7 +100,6 @@ Known keys (defined in src/env.ts EnvSchema):
 
     OPENROUTESERVICE_API_KEY
     HERE_API_KEY
-    TOMTOM_API_KEY
 
 Tools access keys via typed helpers from src/env.ts:
 

@@ -3,7 +3,6 @@ import { Option, Schema } from "effect";
 export const EnvSchema = Schema.Struct({
 	OPENROUTESERVICE_API_KEY: Schema.optional(Schema.String),
 	HERE_API_KEY: Schema.optional(Schema.String),
-	TOMTOM_API_KEY: Schema.optional(Schema.String),
 });
 
 export type Env = typeof EnvSchema.Type;

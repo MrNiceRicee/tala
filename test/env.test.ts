@@ -11,18 +11,15 @@ describe("parseEnv", () => {
 		const env = parseEnv({});
 		expect(env.OPENROUTESERVICE_API_KEY).toBeUndefined();
 		expect(env.HERE_API_KEY).toBeUndefined();
-		expect(env.TOMTOM_API_KEY).toBeUndefined();
 	});
 
-	it("accepts all three known keys", () => {
+	it("accepts known keys together", () => {
 		const env = parseEnv({
 			OPENROUTESERVICE_API_KEY: "ors-key",
 			HERE_API_KEY: "here-key",
-			TOMTOM_API_KEY: "tt-key",
 		});
 		expect(env.OPENROUTESERVICE_API_KEY).toBe("ors-key");
 		expect(env.HERE_API_KEY).toBe("here-key");
-		expect(env.TOMTOM_API_KEY).toBe("tt-key");
 	});
 
 	it("ignores unknown keys silently", () => {

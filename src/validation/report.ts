@@ -1,6 +1,11 @@
 import type { Severity, ValidationIssue } from "./rules";
 
-const severityOrder: Record<Severity, number> = { error: 0, warn: 1, info: 2 };
+const severityOrder: Record<Severity, number> = {
+	error: 0,
+	warn: 1,
+	info: 2,
+	ignore: 3,
+};
 
 export function formatReport(results: Map<string, ValidationIssue[]>): string {
 	if (results.size === 0) return "";
