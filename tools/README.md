@@ -21,3 +21,14 @@ List available tools:
     bun run lab tool oahu-trip drive-matrix -- --points "waikiki,kailua,north-shore"
 
 Output captured to `topics/oahu-trip/computations/drive-matrix.output.md` citing the tool and args used.
+
+## API keys
+
+Keys go in `.env` at the repo root (gitignored). See `.env.example` for the template.
+
+Tools access keys via the shared helper:
+
+    import { getKey } from "../src/env"
+    const apiKey = getKey("OPENROUTESERVICE_API_KEY", { tool: "drive-matrix" })
+
+`getKey` throws a helpful error if the key is missing. Use `getKeyOptional` if a key is optional.
