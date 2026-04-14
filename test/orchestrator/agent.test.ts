@@ -19,7 +19,7 @@ describe("runAgent", () => {
 		const result = await Effect.runPromise(
 			runAgent({
 				command: "bun",
-				args: ["-e", "process.exit(1)"],
+				args: ["-e", "throw new Error('test failure')"],
 				mode: "print",
 			}),
 		);

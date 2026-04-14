@@ -62,7 +62,7 @@ describe("runTool", () => {
 		await mkdir(join(labRoot, "tools"), { recursive: true });
 		await Bun.write(
 			join(labRoot, "tools", "args-tool.ts"),
-			'console.log(process.argv.slice(2).join(", "))',
+			'console.log(Bun.argv.slice(2).join(", "))',
 		);
 
 		const result = await runTool(labRoot, "args-topic", "args-tool", [

@@ -59,10 +59,7 @@ describe("runComputation", () => {
 			"computations",
 			"echo-args.ts",
 		);
-		await Bun.write(
-			scriptPath,
-			'console.log(process.argv.slice(2).join(", "))',
-		);
+		await Bun.write(scriptPath, 'console.log(Bun.argv.slice(2).join(", "))');
 
 		const result = await runComputation(labRoot, "args-test", "echo-args.ts", [
 			"--salary",

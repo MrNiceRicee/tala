@@ -8,7 +8,7 @@ export const EnvSchema = Schema.Struct({
 export type Env = typeof EnvSchema.Type;
 
 export function parseEnv(
-	source: Record<string, string | undefined> = process.env,
+	source: Record<string, string | undefined> = Bun.env,
 ): Env {
 	return Schema.decodeUnknownSync(EnvSchema)(source);
 }
