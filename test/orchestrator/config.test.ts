@@ -1,5 +1,4 @@
 import { describe, expect, it } from "bun:test";
-import { Effect } from "effect";
 import { DEFAULT_CONFIG, loadConfig } from "../../src/orchestrator/config";
 
 describe("DEFAULT_CONFIG", () => {
@@ -14,7 +13,7 @@ describe("DEFAULT_CONFIG", () => {
 
 describe("loadConfig", () => {
 	it("returns defaults when no config file exists", () => {
-		const config = Effect.runSync(loadConfig("/nonexistent/path"));
+		const config = loadConfig("/nonexistent/path");
 		expect(config).toEqual(DEFAULT_CONFIG);
 	});
 });

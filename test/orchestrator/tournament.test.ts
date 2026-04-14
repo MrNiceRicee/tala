@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { Option } from "effect";
 import {
 	computeBordaScores,
 	determineWinner,
@@ -11,14 +12,16 @@ describe("parseJudgeRanking", () => {
 		const result = parseJudgeRanking(
 			"Some analysis...\n\nRANK: 1st=2, 2nd=3, 3rd=1",
 		);
-		expect(result).toEqual({ first: 2, second: 3, third: 1 });
+		expect(Option.isSome(result)).toBe(true);
+		expect(Option.getOrNull(result)).toEqual({ first: 2, second: 3, third: 1 });
 	});
-	it("returns null for missing ranking", () => {
-		expect(parseJudgeRanking("No ranking here")).toBeNull();
+	it("returns Option.none for missing ranking", () => {
+		expect(Option.isNone(parseJudgeRanking("No ranking here"))).toBe(true);
 	});
 	it("handles ranking with extra whitespace", () => {
 		const result = parseJudgeRanking("RANK: 1st = 1, 2nd = 2, 3rd = 3");
-		expect(result).toEqual({ first: 1, second: 2, third: 3 });
+		expect(Option.isSome(result)).toBe(true);
+		expect(Option.getOrNull(result)).toEqual({ first: 1, second: 2, third: 3 });
 	});
 });
 

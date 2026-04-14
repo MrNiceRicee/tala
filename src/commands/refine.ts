@@ -1,7 +1,6 @@
 import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
-import { Effect } from "effect";
 import { loadConfig } from "../orchestrator/config";
 import { loadTopicCriteria } from "../orchestrator/criteria";
 import {
@@ -81,7 +80,7 @@ export async function prepareRefine(
 	sectionName: string,
 ): Promise<string> {
 	const context = await buildRefineContext(labRoot, slug, sectionName);
-	const config = Effect.runSync(loadConfig(labRoot));
+	const config = loadConfig(labRoot);
 
 	if (!context.section) {
 		return `Section "${sectionName}" is empty or not found in ${slug}.`;

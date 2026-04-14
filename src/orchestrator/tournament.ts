@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Match, Option } from "effect";
 import type { AgentExecutor } from "./agent";
 import { runPipeline } from "./pipeline";
 import { buildTournamentRound } from "./pipelines";
@@ -25,16 +25,17 @@ export interface TournamentResult {
 	totalRounds: number;
 }
 
-export function parseJudgeRanking(output: string): JudgeRanking | null {
+export function parseJudgeRanking(output: string): Option.Option<JudgeRanking> {
 	const match = output.match(
 		/RANK:\s*1st\s*=\s*(\d+)\s*,\s*2nd\s*=\s*(\d+)\s*,\s*3rd\s*=\s*(\d+)/,
 	);
-	if (!match) return null;
-	return {
-		first: parseInt(match[1], 10),
-		second: parseInt(match[2], 10),
-		third: parseInt(match[3], 10),
-	};
+	return Option.fromNullOr(match).pipe(
+		Option.map((m) => ({
+			first: parseInt(m[1], 10),
+			second: parseInt(m[2], 10),
+			third: parseInt(m[3], 10),
+		})),
+	);
 }
 
 export function computeBordaScores(
@@ -53,15 +54,16 @@ export function determineWinner(
 	scores: Map<number, number>,
 	incumbentIdx: number,
 ): number {
-	let bestIdx = incumbentIdx;
-	let bestScore = scores.get(incumbentIdx) ?? 0;
-	for (const [idx, score] of scores) {
-		if (score > bestScore) {
-			bestScore = score;
-			bestIdx = idx;
-		}
-	}
-	return bestIdx;
+	const incumbentScore = scores.get(incumbentIdx) ?? 0;
+	const maxScore = Math.max(0, ...scores.values());
+	return Match.value(incumbentScore >= maxScore).pipe(
+		Match.when(true, () => incumbentIdx),
+		Match.orElse(
+			() =>
+				[...scores.entries()].find(([, s]) => s === maxScore)?.[0] ??
+				incumbentIdx,
+		),
+	);
 }
 
 export function shuffleProposals(
@@ -87,9 +89,11 @@ export function shuffleProposals(
 }
 
 function labelForOriginalIdx(idx: number): "A" | "B" | "AB" {
-	if (idx === 1) return "A";
-	if (idx === 2) return "B";
-	return "AB";
+	return Match.value(idx).pipe(
+		Match.when(1, () => "A" as const),
+		Match.when(2, () => "B" as const),
+		Match.orElse(() => "AB" as const),
+	);
 }
 
 export function runTournament(config: {
@@ -101,21 +105,29 @@ export function runTournament(config: {
 	judgeCount: number;
 	executor: AgentExecutor;
 	cwd?: string;
-}): Effect.Effect<TournamentResult> {
+}) {
+	const {
+		section,
+		sources,
+		criteria,
+		maxPasses,
+		convergenceK,
+		judgeCount,
+		executor,
+		cwd,
+	} = config;
 	return Effect.gen(function* () {
-		let incumbent = config.section;
+		let incumbent = section;
 		let streak = 0;
 		const rounds: RoundResult[] = [];
+		let round = 1;
 
-		for (let round = 1; round <= config.maxPasses; round++) {
-			const pipelineSteps = buildTournamentRound(
-				config.criteria,
-				config.executor,
-			);
+		while (round <= maxPasses && streak < convergenceK) {
+			const pipelineSteps = buildTournamentRound(criteria, executor);
 			const initialArtifacts = new Map([
 				["section", incumbent],
-				["sources", config.sources],
-				["criteria", config.criteria],
+				["sources", sources],
+				["criteria", criteria],
 			]);
 
 			const artifacts = yield* runPipeline(pipelineSteps, initialArtifacts);
@@ -129,24 +141,23 @@ export function runTournament(config: {
 				.map((text, i) => `## Proposal ${i + 1}\n\n${text}`)
 				.join("\n\n---\n\n");
 
-			const judgeSystemPrompt = judgePrompt(config.criteria);
+			const judgeSystemPrompt = judgePrompt(criteria);
 			const rankings: JudgeRanking[] = [];
 
-			for (let j = 0; j < config.judgeCount; j++) {
-				const result = yield* config.executor({
+			for (let j = 0; j < judgeCount; j++) {
+				const result = yield* executor({
 					mode: "print",
 					systemPrompt: judgeSystemPrompt,
 					input: judgeInput,
-					cwd: config.cwd,
+					cwd,
 				});
-				const ranking = parseJudgeRanking(result.output);
-				if (ranking) {
+				Option.map(parseJudgeRanking(result.output), (ranking) => {
 					rankings.push({
 						first: shuffled.indexMap[ranking.first - 1],
 						second: shuffled.indexMap[ranking.second - 1],
 						third: shuffled.indexMap[ranking.third - 1],
 					});
-				}
+				});
 			}
 
 			const scores = computeBordaScores(rankings);
@@ -161,29 +172,23 @@ export function runTournament(config: {
 				challenges,
 			});
 
-			if (winnerOriginalIdx === 1) {
-				streak++;
-			} else {
-				streak = 0;
-				if (winnerOriginalIdx === 2) incumbent = revisionB;
-				else incumbent = synthesisAB;
-			}
-
-			if (streak >= config.convergenceK) {
-				return {
-					converged: true,
-					rounds,
-					finalSection: incumbent,
-					totalRounds: round,
-				};
-			}
+			streak = Match.value(winnerOriginalIdx === 1).pipe(
+				Match.when(true, () => streak + 1),
+				Match.orElse(() => 0),
+			);
+			incumbent = Match.value(winnerOriginalIdx).pipe(
+				Match.when(1, () => incumbent),
+				Match.when(2, () => revisionB),
+				Match.orElse(() => synthesisAB),
+			);
+			round++;
 		}
 
 		return {
-			converged: false,
+			converged: streak >= convergenceK,
 			rounds,
 			finalSection: incumbent,
-			totalRounds: config.maxPasses,
+			totalRounds: round - 1,
 		};
 	});
 }

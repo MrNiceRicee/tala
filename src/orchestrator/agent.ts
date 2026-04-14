@@ -14,25 +14,27 @@ export interface AgentResult {
 	exitCode: number;
 }
 
-// the pluggable interface — any harness implements this
-export type AgentExecutor = (config: AgentConfig) => Effect.Effect<AgentResult>;
+function buildArgs(
+	mode: "print" | "interactive",
+	systemPrompt?: string,
+	input?: string,
+): string[] {
+	return (
+		[
+			mode === "print" && "-p",
+			systemPrompt && "--append-system-prompt",
+			systemPrompt,
+			input && mode === "print" && input,
+		] satisfies (string | false | undefined)[]
+	).filter((x): x is string => typeof x === "string");
+}
 
 // CLI executor — spawns a CLI process (claude, hermes, or any command)
-export function createCliExecutor(command: string): AgentExecutor {
-	return (config) => {
-		const args: string[] = [];
-		if (config.mode === "print") {
-			args.push("-p");
-		}
-		if (config.systemPrompt) {
-			args.push("--append-system-prompt", config.systemPrompt);
-		}
-		if (config.input && config.mode === "print") {
-			args.push(config.input);
-		}
-
-		return Effect.tryPromise({
+export function createCliExecutor(command: string) {
+	return (config: AgentConfig) =>
+		Effect.tryPromise({
 			try: async () => {
+				const args = buildArgs(config.mode, config.systemPrompt, config.input);
 				const proc = Bun.spawn([command, ...args], {
 					cwd: config.cwd,
 					stdout: "pipe",
@@ -41,12 +43,15 @@ export function createCliExecutor(command: string): AgentExecutor {
 				const stdout = await new Response(proc.stdout).text();
 				const stderr = await new Response(proc.stderr).text();
 				const exitCode = await proc.exited;
-				return { output: stdout, stderr, exitCode };
+				return { output: stdout, stderr, exitCode } satisfies AgentResult;
 			},
 			catch: (error) => new Error(`agent spawn failed: ${String(error)}`),
 		});
-	};
 }
+
+// the pluggable interface — any harness implements this
+// inferred from createCliExecutor to stay annotation-free
+export type AgentExecutor = ReturnType<typeof createCliExecutor>;
 
 // default executor — uses claude CLI
 export const defaultExecutor: AgentExecutor = createCliExecutor("claude");
@@ -57,17 +62,7 @@ export function buildClaudeArgs(config: {
 	systemPrompt?: string;
 	input?: string;
 }): string[] {
-	const args: string[] = [];
-	if (config.mode === "print") {
-		args.push("-p");
-	}
-	if (config.systemPrompt) {
-		args.push("--append-system-prompt", config.systemPrompt);
-	}
-	if (config.input && config.mode === "print") {
-		args.push(config.input);
-	}
-	return args;
+	return buildArgs(config.mode, config.systemPrompt, config.input);
 }
 
 export function runAgent(config: {
@@ -75,18 +70,19 @@ export function runAgent(config: {
 	args: string[];
 	mode: "print" | "interactive";
 	cwd?: string;
-}): Effect.Effect<AgentResult> {
+}) {
+	const { command, args, cwd } = config;
 	return Effect.tryPromise({
 		try: async () => {
-			const proc = Bun.spawn([config.command, ...config.args], {
-				cwd: config.cwd,
+			const proc = Bun.spawn([command, ...args], {
+				cwd,
 				stdout: "pipe",
 				stderr: "pipe",
 			});
 			const stdout = await new Response(proc.stdout).text();
 			const stderr = await new Response(proc.stderr).text();
 			const exitCode = await proc.exited;
-			return { output: stdout, stderr, exitCode };
+			return { output: stdout, stderr, exitCode } satisfies AgentResult;
 		},
 		catch: (error) => new Error(`agent spawn failed: ${String(error)}`),
 	});

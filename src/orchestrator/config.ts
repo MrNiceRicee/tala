@@ -1,6 +1,4 @@
-import { existsSync } from "node:fs";
-import { join } from "node:path";
-import { Effect, Schema } from "effect";
+import { Schema } from "effect";
 
 const LabConfigSchema = Schema.Struct({
 	convergenceK: Schema.Number,
@@ -20,12 +18,6 @@ export const DEFAULT_CONFIG: LabConfig = {
 	warnUnverifiedAfterDays: 30,
 };
 
-export function loadConfig(labRoot: string): Effect.Effect<LabConfig> {
-	return Effect.sync(() => {
-		const configPath = join(labRoot, "lab.config.ts");
-		if (!existsSync(configPath)) {
-			return DEFAULT_CONFIG;
-		}
-		return DEFAULT_CONFIG;
-	});
+export function loadConfig(_labRoot: string): LabConfig {
+	return DEFAULT_CONFIG;
 }
