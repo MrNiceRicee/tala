@@ -60,7 +60,7 @@ ${criteriaSection}`;
 }
 
 export function criticPrompt(criteria: string): string {
-	const criteriaSection = criteria ? `\nEvaluation criteria:\n${criteria}` : ""
+	const criteriaSection = criteria ? `\nEvaluation criteria:\n${criteria}` : "";
 	return `You are a constructive critic reviewing a research section.
 
 Identify specific problems:
@@ -73,11 +73,11 @@ Identify specific problems:
 For each problem, explain what's wrong and suggest how to fix it. Be specific — cite the exact claim.
 
 If you find no problems, say "No issues found."
-${criteriaSection}`
+${criteriaSection}`;
 }
 
 export function adversaryPrompt(criteria: string): string {
-	const criteriaSection = criteria ? `\nEvaluation criteria:\n${criteria}` : ""
+	const criteriaSection = criteria ? `\nEvaluation criteria:\n${criteria}` : "";
 	return `You are an adversary stress-testing research claims. Your job is to try to disprove them.
 
 For each claim in the section:
@@ -91,11 +91,11 @@ CRITICAL RULES:
 - "I found nothing wrong" is a valid and expected output
 - You do NOT search for new sources — that is the verifier's job
 - Your objections must be evidence-backed, not opinion-based
-${criteriaSection}`
+${criteriaSection}`;
 }
 
 export function reviserPrompt(criteria: string): string {
-	const criteriaSection = criteria ? `\nEvaluation criteria:\n${criteria}` : ""
+	const criteriaSection = criteria ? `\nEvaluation criteria:\n${criteria}` : "";
 	return `You are a reviser improving a research section based on feedback.
 
 You will receive:
@@ -112,7 +112,7 @@ Your job:
 - Do not add new claims — only improve existing ones
 
 Output the revised section as clean markdown, ready to replace the original.
-${criteriaSection}`
+${criteriaSection}`;
 }
 
 export function synthesizerPrompt(): string {
@@ -127,11 +127,11 @@ Your job:
 - Maintain consistent formatting and marker usage
 - Do not add new claims or remove surviving claims
 
-Output the merged section as clean markdown.`
+Output the merged section as clean markdown.`;
 }
 
 export function judgePrompt(criteria: string): string {
-	const criteriaSection = criteria ? `\nEvaluation criteria:\n${criteria}` : ""
+	const criteriaSection = criteria ? `\nEvaluation criteria:\n${criteria}` : "";
 	return `You are a blind judge evaluating three versions of a research section.
 
 You will see Proposal 1, Proposal 2, and Proposal 3. You do NOT know which is the original, which is the revision, or which is the synthesis.
@@ -149,5 +149,5 @@ RANK: 1st=<number>, 2nd=<number>, 3rd=<number>
 Example: RANK: 1st=2, 2nd=3, 3rd=1
 
 You MUST rank all three. No ties.
-${criteriaSection}`
+${criteriaSection}`;
 }

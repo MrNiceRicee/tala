@@ -3,7 +3,12 @@ import { Schema } from "effect";
 export const NoteStatus = Schema.Literals(["sketch", "working", "distilled"]);
 export type NoteStatus = typeof NoteStatus.Type;
 
-export const NoteType = Schema.Literals(["hub", "source", "note", "computation"]);
+export const NoteType = Schema.Literals([
+	"hub",
+	"source",
+	"note",
+	"computation",
+]);
 export type NoteType = typeof NoteType.Type;
 
 export const BaseFrontmatter = Schema.Struct({
