@@ -5,8 +5,11 @@ import { generateConventions } from "./commands/conventions";
 import { runHelp } from "./commands/help";
 import { refreshIndex } from "./commands/index";
 import { createTopic } from "./commands/new";
+import { applyRefine, prepareRefine } from "./commands/refine";
 import { search } from "./commands/search";
 import { runValidation } from "./commands/validate";
+import { prepareGather } from "./commands/gather";
+import { prepareVerify } from "./commands/verify";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -143,7 +146,6 @@ switch (command) {
 			console.error("usage: bun run lab gather <topic-slug>");
 			process.exit(1);
 		}
-		const { prepareGather } = await import("./commands/gather");
 		const output = await prepareGather(labRoot, slug);
 		console.log(output);
 		break;
@@ -155,7 +157,6 @@ switch (command) {
 			console.error("usage: bun run lab verify <topic-slug>");
 			process.exit(1);
 		}
-		const { prepareVerify } = await import("./commands/verify");
 		const output = await prepareVerify(labRoot, slug);
 		console.log(output);
 		break;
@@ -189,7 +190,6 @@ switch (command) {
 				process.exit(1);
 			}
 			const input = await Bun.stdin.text();
-			const { applyRefine } = await import("./commands/refine");
 			await applyRefine(labRoot, applySlug, section, input);
 			console.log(`refined section written to ${applySlug}`);
 			break;
@@ -206,7 +206,6 @@ switch (command) {
 		}
 		const sectionIdx = args.indexOf("--section");
 		const section = sectionIdx >= 0 ? args[sectionIdx + 1] : "Findings";
-		const { prepareRefine } = await import("./commands/refine");
 		const output = await prepareRefine(labRoot, slug, section);
 		console.log(output);
 		break;
