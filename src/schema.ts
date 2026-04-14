@@ -50,30 +50,35 @@ export const ComputationFrontmatter = Schema.Struct({
 });
 export type ComputationFrontmatter = typeof ComputationFrontmatter.Type;
 
+type MarkerLabel = "unsupported" | "single-source" | "hypothesis" | "contradicted";
+const MARKER_LABELS: readonly [
+	MarkerLabel,
+	MarkerLabel,
+	MarkerLabel,
+	MarkerLabel,
+] = ["unsupported", "single-source", "hypothesis", "contradicted"];
+
 export const CLAIM_MARKERS = {
 	unsupported: {
-		label: "unsupported",
+		label: MARKER_LABELS[0],
 		description: "no evidence at all",
 	},
 	"single-source": {
-		label: "single-source",
+		label: MARKER_LABELS[1],
 		description: "one source, needs corroboration",
 	},
 	hypothesis: {
-		label: "hypothesis",
+		label: MARKER_LABELS[2],
 		description: "reasoned inference, not directly provable",
 	},
 	contradicted: {
-		label: "contradicted",
+		label: MARKER_LABELS[3],
 		description: "sources disagree on this claim",
 	},
 } as const satisfies Record<string, { label: string; description: string }>;
 
-export const CLAIM_MARKER_LABELS = Object.values(CLAIM_MARKERS).map(
-	(m) => m.label,
-) as [string, ...string[]];
-
-export const ClaimMarkerKind = Schema.Literals(CLAIM_MARKER_LABELS);
+export const CLAIM_MARKER_LABELS = MARKER_LABELS;
+export const ClaimMarkerKind = Schema.Literals(MARKER_LABELS);
 export type ClaimMarkerKind = typeof ClaimMarkerKind.Type;
 
 export type SeverityLevel = "error" | "warn" | "info" | "ignore";
