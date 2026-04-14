@@ -1,4 +1,6 @@
 import { join } from "node:path";
+import { BunRuntime, BunServices } from "@effect/platform-bun";
+import { Console, Data, Effect, Match, Runtime, Stdio } from "effect";
 import { runCheck } from "./commands/check";
 import { runComputation } from "./commands/compute";
 import { generateConventions } from "./commands/conventions";
@@ -12,8 +14,14 @@ import { listTools, runTool } from "./commands/tool";
 import { runValidation } from "./commands/validate";
 import { prepareVerify } from "./commands/verify";
 
-const args = process.argv.slice(2);
-const command = args[0];
+class CliError extends Data.TaggedError("CliError")<{
+	readonly message: string;
+	readonly exitCode: number;
+}> {
+	readonly [Runtime.errorExitCode] = this.exitCode;
+}
+
+const labRoot = import.meta.dir.replace(/\/src$/, "");
 
 const commandDescriptions: Record<string, string> = {
 	new: "create a new research topic",
@@ -31,221 +39,313 @@ const commandDescriptions: Record<string, string> = {
 	tools: "list available tools",
 };
 
-function printHelp() {
-	console.log("research lab cli\n");
-	console.log("usage: bun run lab <command> [options]\n");
-	console.log("commands:");
-	for (const [name, desc] of Object.entries(commandDescriptions)) {
-		console.log(`  ${name.padEnd(12)} ${desc}`);
-	}
+const helpLines = [
+	"research lab cli\n",
+	"usage: bun run lab <command> [options]\n",
+	"commands:",
+	...Object.entries(commandDescriptions).map(
+		([name, desc]) => `  ${name.padEnd(12)} ${desc}`,
+	),
+];
+
+const printHelp = Effect.forEach(helpLines, (line) => Console.log(line), {
+	discard: true,
+});
+
+const exit1 = Effect.fail(new CliError({ message: "", exitCode: 1 }));
+
+function argsAfterDashDash(args: readonly string[]): string[] {
+	const idx = args.indexOf("--");
+	return Match.value(idx >= 0).pipe(
+		Match.when(true, () => args.slice(idx + 1)),
+		Match.orElse(() => [] as string[]),
+	);
 }
 
-if (!command || command === "--help" || command === "-h") {
-	printHelp();
-	process.exit(0);
+function sectionFromArgs(args: readonly string[]): string {
+	const sectionIdx = args.indexOf("--section");
+	return Match.value(sectionIdx >= 0).pipe(
+		Match.when(true, () => args[sectionIdx + 1] ?? "Findings"),
+		Match.orElse(() => "Findings"),
+	);
 }
 
-if (!commandDescriptions[command]) {
-	console.error(`unknown command: ${command}`);
-	printHelp();
-	process.exit(1);
+function toolsOutput(tools: string[]): string {
+	return Match.value(tools.length === 0).pipe(
+		Match.when(
+			true,
+			() => "no tools available. drop .ts files into tools/ to get started.",
+		),
+		Match.orElse(() =>
+			["available tools:", "", ...tools.map((t) => `  ${t}`)].join("\n"),
+		),
+	);
 }
 
-const labRoot = import.meta.dir.replace(/\/src$/, "");
+const usageNew = Console.error('usage: bun run lab new "Topic Title"').pipe(
+	Effect.andThen(exit1),
+);
 
-switch (command) {
-	case "new": {
-		const title = args.slice(1).join(" ");
-		if (!title) {
-			console.error('usage: bun run lab new "Topic Title"');
-			process.exit(1);
-		}
-		const result = await createTopic(labRoot, title);
-		if (result.success) {
-			console.log(`created topic: ${result.slug}`);
-			console.log(`  ${result.path}`);
-		} else {
-			console.error(result.error);
-			process.exit(1);
-		}
-		break;
-	}
-	case "index": {
-		const result = await refreshIndex(labRoot);
-		console.log(`index refreshed: ${result.topicCount} topic(s)`);
-		break;
-	}
-	case "validate": {
-		const slug = args[1];
-		const result = await runValidation(labRoot, slug);
-		if (result.report) {
-			console.log(result.report);
-		}
-		if (result.totalIssues === 0) {
-			console.log("no issues found");
-		} else {
-			console.log(`${result.totalIssues} issue(s) found`);
-		}
-		process.exit(result.exitCode);
-		break;
-	}
-	case "compute": {
-		const slug = args[1];
-		const scriptName = args[2];
-		if (!slug || !scriptName) {
-			console.error(
-				"usage: bun run lab compute <topic-slug> <script-name> [-- args...]",
+const usageCompute = Console.error(
+	"usage: bun run lab compute <topic-slug> <script-name> [-- args...]",
+).pipe(Effect.andThen(exit1));
+
+const usageSearch = Console.error('usage: bun run lab search "query"').pipe(
+	Effect.andThen(exit1),
+);
+
+const usageGather = Console.error(
+	"usage: bun run lab gather <topic-slug>",
+).pipe(Effect.andThen(exit1));
+
+const usageVerify = Console.error(
+	"usage: bun run lab verify <topic-slug>",
+).pipe(Effect.andThen(exit1));
+
+const usageTool = Console.error(
+	"usage: bun run lab tool <topic-slug> <tool-name> [-- args...]",
+).pipe(Effect.andThen(exit1));
+
+const usageRefineApply = Console.error(
+	"usage: bun run lab refine apply <topic-slug> --section Findings",
+).pipe(Effect.andThen(exit1));
+
+const usageRefinePrepare = Console.error(
+	"usage: bun run lab refine <topic-slug> [--section Findings]",
+).pipe(
+	Effect.andThen(
+		Console.error(
+			"       bun run lab refine apply <topic-slug> --section Findings",
+		),
+	),
+	Effect.andThen(exit1),
+);
+
+const refineApplyEffect = Effect.gen(function* () {
+	const argv = yield* Stdio.Stdio.use((s) => s.args);
+	const args = argv;
+	const applySlug = args[2];
+	const section = sectionFromArgs(args);
+	const noSlug = Effect.succeed(!applySlug);
+	yield* usageRefineApply.pipe(Effect.when(noSlug));
+	const input = yield* Effect.promise(() => Bun.stdin.text());
+	yield* Effect.promise(() => applyRefine(labRoot, applySlug, section, input));
+	yield* Console.log(`refined section written to ${applySlug}`);
+});
+
+const refinePrepareEffect = Effect.gen(function* () {
+	const argv = yield* Stdio.Stdio.use((s) => s.args);
+	const args = argv;
+	const slug = args[1];
+	const section = sectionFromArgs(args);
+	const noSlug = Effect.succeed(!slug);
+	yield* usageRefinePrepare.pipe(Effect.when(noSlug));
+	const output = yield* Effect.promise(() =>
+		prepareRefine(labRoot, slug, section),
+	);
+	yield* Console.log(output);
+});
+
+const dispatchEffect = Effect.gen(function* () {
+	const argv = yield* Stdio.Stdio.use((s) => s.args);
+	const args = argv;
+	const command = args[0];
+
+	const isUnknown = Effect.succeed(!commandDescriptions[command]);
+	yield* Console.error(`unknown command: ${command}`).pipe(
+		Effect.andThen(printHelp),
+		Effect.andThen(exit1),
+		Effect.when(isUnknown),
+	);
+
+	switch (command) {
+		case "new": {
+			const title = args.slice(1).join(" ");
+			const noTitle = Effect.succeed(!title);
+			yield* usageNew.pipe(Effect.when(noTitle));
+			const result = yield* Effect.promise(() => createTopic(labRoot, title));
+			const success = Effect.succeed(result.success);
+			const notSuccess = Effect.succeed(!result.success);
+			yield* Console.log(`created topic: ${result.slug}`).pipe(
+				Effect.andThen(Console.log(`  ${result.path}`)),
+				Effect.when(success),
 			);
-			process.exit(1);
-		}
-		const dashDash = args.indexOf("--");
-		const scriptArgs = dashDash >= 0 ? args.slice(dashDash + 1) : [];
-
-		const result = await runComputation(labRoot, slug, scriptName, scriptArgs);
-		if (result.success) {
-			console.log(result.output);
-			console.log(`output saved: ${result.outputPath}`);
-		} else {
-			console.error(result.error);
-			process.exit(1);
-		}
-		break;
-	}
-	case "search": {
-		const query = args.slice(1).join(" ");
-		if (!query) {
-			console.error('usage: bun run lab search "query"');
-			process.exit(1);
-		}
-		const hits = await search(labRoot, query);
-		if (hits.length === 0) {
-			console.log("no results found");
-		} else {
-			for (const hit of hits) {
-				console.log(`[${hit.status}] ${hit.file}:${hit.line}`);
-				console.log(`  ${hit.context}`);
-			}
-			console.log(`\n${hits.length} result(s)`);
-		}
-		break;
-	}
-
-	case "check": {
-		const result = await runCheck(labRoot);
-		if (result.report) {
-			console.log(result.report);
-		}
-		if (result.issueCount === 0) {
-			console.log("nothing needs attention");
-		} else {
-			console.log(`${result.issueCount} item(s) need attention`);
-		}
-		break;
-	}
-
-	case "gather": {
-		const slug = args[1];
-		if (!slug) {
-			console.error("usage: bun run lab gather <topic-slug>");
-			process.exit(1);
-		}
-		const output = await prepareGather(labRoot, slug);
-		console.log(output);
-		break;
-	}
-
-	case "verify": {
-		const slug = args[1];
-		if (!slug) {
-			console.error("usage: bun run lab verify <topic-slug>");
-			process.exit(1);
-		}
-		const output = await prepareVerify(labRoot, slug);
-		console.log(output);
-		break;
-	}
-
-	case "conventions": {
-		const content = generateConventions();
-		const conventionsPath = join(labRoot, "CONVENTIONS.md");
-		await Bun.write(conventionsPath, content);
-		console.log("CONVENTIONS.md regenerated from TypeScript definitions");
-		break;
-	}
-
-	case "help": {
-		const topic = args[1];
-		console.log(runHelp(topic));
-		break;
-	}
-
-	case "refine": {
-		const slug = args[1];
-		const subcommand = args[1];
-		if (subcommand === "apply") {
-			const applySlug = args[2];
-			const sectionIdx = args.indexOf("--section");
-			const section = sectionIdx >= 0 ? args[sectionIdx + 1] : "Findings";
-			if (!applySlug) {
-				console.error(
-					"usage: bun run lab refine apply <topic-slug> --section Findings",
-				);
-				process.exit(1);
-			}
-			const input = await Bun.stdin.text();
-			await applyRefine(labRoot, applySlug, section, input);
-			console.log(`refined section written to ${applySlug}`);
+			yield* Console.error(result.error ?? "").pipe(
+				Effect.andThen(exit1),
+				Effect.when(notSuccess),
+			);
 			break;
 		}
 
-		if (!slug) {
-			console.error(
-				"usage: bun run lab refine <topic-slug> [--section Findings]",
-			);
-			console.error(
-				"       bun run lab refine apply <topic-slug> --section Findings",
-			);
-			process.exit(1);
+		case "index": {
+			const result = yield* Effect.promise(() => refreshIndex(labRoot));
+			yield* Console.log(`index refreshed: ${result.topicCount} topic(s)`);
+			break;
 		}
-		const sectionIdx = args.indexOf("--section");
-		const section = sectionIdx >= 0 ? args[sectionIdx + 1] : "Findings";
-		const output = await prepareRefine(labRoot, slug, section);
-		console.log(output);
-		break;
-	}
 
-	case "tool": {
-		const slug = args[1];
-		const toolName = args[2];
-		if (!slug || !toolName) {
-			console.error(
-				"usage: bun run lab tool <topic-slug> <tool-name> [-- args...]",
+		case "validate": {
+			const slug = args[1];
+			const result = yield* Effect.promise(() => runValidation(labRoot, slug));
+			const hasReport = Effect.succeed(result.report.length > 0);
+			yield* Console.log(result.report).pipe(Effect.when(hasReport));
+			const noIssues = Effect.succeed(result.totalIssues === 0);
+			yield* Console.log("no issues found").pipe(Effect.when(noIssues));
+			const hasIssues = Effect.succeed(result.totalIssues > 0);
+			yield* Console.log(`${result.totalIssues} issue(s) found`).pipe(
+				Effect.when(hasIssues),
 			);
-			process.exit(1);
+			const shouldFail = Effect.succeed(result.exitCode !== 0);
+			const failWithCode = Effect.fail(
+				new CliError({ message: "", exitCode: result.exitCode }),
+			);
+			yield* failWithCode.pipe(Effect.when(shouldFail));
+			break;
 		}
-		const dashDash = args.indexOf("--");
-		const toolArgs = dashDash >= 0 ? args.slice(dashDash + 1) : [];
-		const result = await runTool(labRoot, slug, toolName, toolArgs);
-		if (result.success) {
-			console.log(result.output);
-			console.log(`output saved: ${result.outputPath}`);
-		} else {
-			console.error(result.error);
-			process.exit(1);
+
+		case "compute": {
+			const slug = args[1];
+			const scriptName = args[2];
+			const noArgs = Effect.succeed(!slug || !scriptName);
+			yield* usageCompute.pipe(Effect.when(noArgs));
+			const scriptArgs = argsAfterDashDash(args);
+			const result = yield* Effect.promise(() =>
+				runComputation(labRoot, slug, scriptName, scriptArgs),
+			);
+			const success = Effect.succeed(result.success);
+			const notSuccess = Effect.succeed(!result.success);
+			yield* Console.log(result.output).pipe(
+				Effect.andThen(Console.log(`output saved: ${result.outputPath}`)),
+				Effect.when(success),
+			);
+			yield* Console.error(result.error ?? "").pipe(
+				Effect.andThen(exit1),
+				Effect.when(notSuccess),
+			);
+			break;
 		}
-		break;
-	}
 
-	case "tools": {
-		const tools = await listTools(labRoot);
-		const output =
-			tools.length === 0
-				? "no tools available. drop .ts files into tools/ to get started."
-				: ["available tools:", "", ...tools.map((t) => `  ${t}`)].join("\n");
-		console.log(output);
-		break;
-	}
+		case "search": {
+			const query = args.slice(1).join(" ");
+			const noQuery = Effect.succeed(!query);
+			yield* usageSearch.pipe(Effect.when(noQuery));
+			const hits = yield* Effect.promise(() => search(labRoot, query));
+			const noHits = Effect.succeed(hits.length === 0);
+			yield* Console.log("no results found").pipe(Effect.when(noHits));
+			const hasHits = Effect.succeed(hits.length > 0);
+			yield* Effect.forEach(
+				hits,
+				(hit) =>
+					Console.log(`[${hit.status}] ${hit.file}:${hit.line}`).pipe(
+						Effect.andThen(Console.log(`  ${hit.context}`)),
+					),
+				{ discard: true },
+			).pipe(
+				Effect.andThen(Console.log(`\n${hits.length} result(s)`)),
+				Effect.when(hasHits),
+			);
+			break;
+		}
 
-	default:
-		console.log(`[lab] command "${command}" not yet implemented`);
-}
+		case "check": {
+			const result = yield* Effect.promise(() => runCheck(labRoot));
+			const hasReport = Effect.succeed(result.report.length > 0);
+			yield* Console.log(result.report).pipe(Effect.when(hasReport));
+			const noIssues = Effect.succeed(result.issueCount === 0);
+			yield* Console.log("nothing needs attention").pipe(Effect.when(noIssues));
+			const hasIssues = Effect.succeed(result.issueCount > 0);
+			yield* Console.log(`${result.issueCount} item(s) need attention`).pipe(
+				Effect.when(hasIssues),
+			);
+			break;
+		}
+
+		case "gather": {
+			const slug = args[1];
+			const noSlug = Effect.succeed(!slug);
+			yield* usageGather.pipe(Effect.when(noSlug));
+			const output = yield* Effect.promise(() => prepareGather(labRoot, slug));
+			yield* Console.log(output);
+			break;
+		}
+
+		case "verify": {
+			const slug = args[1];
+			const noSlug = Effect.succeed(!slug);
+			yield* usageVerify.pipe(Effect.when(noSlug));
+			const output = yield* Effect.promise(() => prepareVerify(labRoot, slug));
+			yield* Console.log(output);
+			break;
+		}
+
+		case "conventions": {
+			const content = generateConventions();
+			const conventionsPath = join(labRoot, "CONVENTIONS.md");
+			yield* Effect.promise(() => Bun.write(conventionsPath, content));
+			yield* Console.log(
+				"CONVENTIONS.md regenerated from TypeScript definitions",
+			);
+			break;
+		}
+
+		case "help": {
+			const topic = args[1];
+			yield* Console.log(runHelp(topic));
+			break;
+		}
+
+		case "refine": {
+			const subcommand = args[1];
+			yield* Match.value(subcommand === "apply").pipe(
+				Match.when(true, () => refineApplyEffect),
+				Match.orElse(() => refinePrepareEffect),
+			);
+			break;
+		}
+
+		case "tool": {
+			const slug = args[1];
+			const toolName = args[2];
+			const noArgs = Effect.succeed(!slug || !toolName);
+			yield* usageTool.pipe(Effect.when(noArgs));
+			const toolArgs = argsAfterDashDash(args);
+			const result = yield* Effect.promise(() =>
+				runTool(labRoot, slug, toolName, toolArgs),
+			);
+			const success = Effect.succeed(result.success);
+			const notSuccess = Effect.succeed(!result.success);
+			yield* Console.log(result.output).pipe(
+				Effect.andThen(Console.log(`output saved: ${result.outputPath}`)),
+				Effect.when(success),
+			);
+			yield* Console.error(result.error ?? "").pipe(
+				Effect.andThen(exit1),
+				Effect.when(notSuccess),
+			);
+			break;
+		}
+
+		case "tools": {
+			const tools = yield* Effect.promise(() => listTools(labRoot));
+			yield* Console.log(toolsOutput(tools));
+			break;
+		}
+
+		default:
+			yield* Console.log(`[lab] command "${command}" not yet implemented`);
+	}
+});
+
+const program = Effect.gen(function* () {
+	const argv = yield* Stdio.Stdio.use((s) => s.args);
+	const command = argv[0];
+	const needsHelp = !command || command === "--help" || command === "-h";
+	yield* Match.value(needsHelp).pipe(
+		Match.when(true, () => printHelp),
+		Match.orElse(() => dispatchEffect),
+	);
+});
+
+program.pipe(
+	Effect.provide(BunServices.layer),
+	BunRuntime.runMain({ disableErrorReporting: true }),
+);
