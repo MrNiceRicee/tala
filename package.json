@@ -5,8 +5,10 @@
   "scripts": {
     "lab": "bun src/cli.ts",
     "test": "bun test",
-    "lint": "biome check src/ test/",
-    "lint:fix": "biome check --write src/ test/"
+    "lint": "biome check src/ test/ && linteffect check src/",
+    "lint:fix": "biome check --write src/ test/",
+    "lint:biome": "biome check src/ test/",
+    "lint:effect": "linteffect check src/"
   },
   "dependencies": {
     "effect": "4.0.0-beta.48",
@@ -17,6 +19,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "latest",
+    "@catenarycloud/linteffect": "github:OperationalFallacy/biome-effect-linting-rules#prerelease-cli-demo-runner",
     "@types/bun": "latest",
     "typescript": "latest"
   }

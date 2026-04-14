@@ -7,7 +7,6 @@ import {
 	ComputationFrontmatter,
 	HubFrontmatter,
 	MARKER_SEVERITY,
-	NoteFrontmatter,
 	NoteStatus,
 	NoteType,
 	SourceFrontmatter,

@@ -1,13 +1,13 @@
 import { describe, expect, it } from "bun:test";
 import {
-	gathererPrompt,
-	verifierCheckPrompt,
-	verifierSearchPrompt,
-	criticPrompt,
 	adversaryPrompt,
+	criticPrompt,
+	gathererPrompt,
+	judgePrompt,
 	reviserPrompt,
 	synthesizerPrompt,
-	judgePrompt,
+	verifierCheckPrompt,
+	verifierSearchPrompt,
 } from "../../src/orchestrator/prompts";
 
 describe("gathererPrompt", () => {
@@ -48,51 +48,51 @@ describe("verifierSearchPrompt", () => {
 
 describe("criticPrompt", () => {
 	it("includes criteria", () => {
-		const prompt = criticPrompt("evidence:\n  - must cite")
-		expect(prompt).toContain("must cite")
-	})
+		const prompt = criticPrompt("evidence:\n  - must cite");
+		expect(prompt).toContain("must cite");
+	});
 	it("asks for specific problems", () => {
-		const prompt = criticPrompt("")
-		expect(prompt).toContain("missing evidence")
-		expect(prompt).toContain("organizational")
-	})
-})
+		const prompt = criticPrompt("");
+		expect(prompt).toContain("missing evidence");
+		expect(prompt).toContain("organizational");
+	});
+});
 
 describe("adversaryPrompt", () => {
 	it("requires evidence-backed objections", () => {
-		const prompt = adversaryPrompt("")
-		expect(prompt).toContain("MUST cite specific evidence")
-		expect(prompt).toContain("found nothing wrong")
-	})
+		const prompt = adversaryPrompt("");
+		expect(prompt).toContain("MUST cite specific evidence");
+		expect(prompt).toContain("found nothing wrong");
+	});
 	it("restricts to existing sources only", () => {
-		const prompt = adversaryPrompt("")
-		expect(prompt).toContain("existing source notes only")
-	})
-})
+		const prompt = adversaryPrompt("");
+		expect(prompt).toContain("existing source notes only");
+	});
+});
 
 describe("reviserPrompt", () => {
 	it("includes instructions to address critique and challenges", () => {
-		const prompt = reviserPrompt("")
-		expect(prompt).toContain("critique")
-		expect(prompt).toContain("challenges")
-		expect(prompt).toContain("markers")
-	})
-})
+		const prompt = reviserPrompt("");
+		expect(prompt).toContain("critique");
+		expect(prompt).toContain("challenges");
+		expect(prompt).toContain("markers");
+	});
+});
 
 describe("synthesizerPrompt", () => {
 	it("asks to merge best of both versions", () => {
-		const prompt = synthesizerPrompt()
-		expect(prompt).toContain("strongest")
-		expect(prompt).toContain("evidence links")
-	})
-})
+		const prompt = synthesizerPrompt();
+		expect(prompt).toContain("strongest");
+		expect(prompt).toContain("evidence links");
+	});
+});
 
 describe("judgePrompt", () => {
 	it("asks for ranking with Borda format", () => {
-		const prompt = judgePrompt("")
-		expect(prompt).toContain("RANK:")
-		expect(prompt).toContain("1st")
-		expect(prompt).toContain("2nd")
-		expect(prompt).toContain("3rd")
-	})
-})
+		const prompt = judgePrompt("");
+		expect(prompt).toContain("RANK:");
+		expect(prompt).toContain("1st");
+		expect(prompt).toContain("2nd");
+		expect(prompt).toContain("3rd");
+	});
+});

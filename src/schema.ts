@@ -50,7 +50,11 @@ export const ComputationFrontmatter = Schema.Struct({
 });
 export type ComputationFrontmatter = typeof ComputationFrontmatter.Type;
 
-type MarkerLabel = "unsupported" | "single-source" | "hypothesis" | "contradicted";
+type MarkerLabel =
+	| "unsupported"
+	| "single-source"
+	| "hypothesis"
+	| "contradicted";
 const MARKER_LABELS: readonly [
 	MarkerLabel,
 	MarkerLabel,

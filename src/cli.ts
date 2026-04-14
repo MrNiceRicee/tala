@@ -2,13 +2,13 @@ import { join } from "node:path";
 import { runCheck } from "./commands/check";
 import { runComputation } from "./commands/compute";
 import { generateConventions } from "./commands/conventions";
+import { prepareGather } from "./commands/gather";
 import { runHelp } from "./commands/help";
 import { refreshIndex } from "./commands/index";
 import { createTopic } from "./commands/new";
 import { applyRefine, prepareRefine } from "./commands/refine";
 import { search } from "./commands/search";
 import { runValidation } from "./commands/validate";
-import { prepareGather } from "./commands/gather";
 import { prepareVerify } from "./commands/verify";
 
 const args = process.argv.slice(2);
