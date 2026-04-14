@@ -17,3 +17,12 @@ Thumbs.db
 *~
 .vscode/
 .idea/
+
+# personal research content — stays local, not part of the tool
+topics/*
+!topics/.gitkeep
+sketch/*
+!sketch/.gitkeep
+archive/*
+!archive/.gitkeep
+!archive/README.md
