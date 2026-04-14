@@ -3,7 +3,7 @@ import { Effect, Option, Predicate, Schema } from "effect";
 export interface ToolDefinition<A, I> {
 	name: string;
 	args: Schema.Codec<A, I>;
-	run: (args: A) => ReturnType<typeof Effect.succeed<string>>;
+	run: (args: A) => ReturnType<typeof readTextFile>;
 }
 
 // wrap an unknown thrown value into an Error with context
