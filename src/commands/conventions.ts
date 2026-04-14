@@ -1,3 +1,4 @@
+import { EnvSchema } from "../env";
 import { DOMAIN_CRITERIA } from "../orchestrator/criteria";
 import { CLAIM_MARKERS, MARKER_SEVERITY } from "../schema";
 
@@ -17,6 +18,10 @@ export function generateConventions(): string {
 
 	const domainList = Object.keys(DOMAIN_CRITERIA)
 		.map((d) => `    ${d}`)
+		.join("\n");
+
+	const envKeyList = Object.keys(EnvSchema.fields)
+		.map((k) => `    ${k}`)
 		.join("\n");
 
 	return `# Research Lab Conventions
@@ -103,6 +108,23 @@ Output is captured to the topic's computations/ folder with provenance.
 List tools:
 
     bun run lab tools
+
+## API keys for tools
+
+Keys live in .env at the repo root (gitignored). See .env.example for the template.
+
+Known keys (defined in src/env.ts EnvSchema):
+
+${envKeyList}
+
+Tools access keys via typed helpers from src/env.ts:
+
+    import { requireKey, env } from "../src/env"
+
+    const apiKey = requireKey("OPENROUTESERVICE_API_KEY", { tool: "drive-matrix" })
+    const optional = env.HERE_API_KEY
+
+Adding a new key: add to EnvSchema in src/env.ts, add to .env.example, add value to .env. TypeScript enforces known keys at compile time.
 
 ## CLI commands
 

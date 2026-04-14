@@ -92,6 +92,25 @@ List tools:
 
     bun run lab tools
 
+## API keys for tools
+
+Keys live in .env at the repo root (gitignored). See .env.example for the template.
+
+Known keys (defined in src/env.ts EnvSchema):
+
+    OPENROUTESERVICE_API_KEY
+    HERE_API_KEY
+    TOMTOM_API_KEY
+
+Tools access keys via typed helpers from src/env.ts:
+
+    import { requireKey, env } from "../src/env"
+
+    const apiKey = requireKey("OPENROUTESERVICE_API_KEY", { tool: "drive-matrix" })
+    const optional = env.HERE_API_KEY
+
+Adding a new key: add to EnvSchema in src/env.ts, add to .env.example, add value to .env. TypeScript enforces known keys at compile time.
+
 ## CLI commands
 
 Run bun run lab help for full command reference.

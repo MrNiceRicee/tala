@@ -26,9 +26,19 @@ Output captured to `topics/oahu-trip/computations/drive-matrix.output.md` citing
 
 Keys go in `.env` at the repo root (gitignored). See `.env.example` for the template.
 
-Tools access keys via the shared helper:
+Known keys are defined in `EnvSchema` in `src/env.ts`. Adding a new key:
+1. Add it to `EnvSchema` in `src/env.ts`
+2. Add it to `.env.example` (tracked template)
+3. Add the value to `.env` (your local file)
 
-    import { getKey } from "../src/env"
-    const apiKey = getKey("OPENROUTESERVICE_API_KEY", { tool: "drive-matrix" })
+Tools access keys via the shared helpers:
 
-`getKey` throws a helpful error if the key is missing. Use `getKeyOptional` if a key is optional.
+    import { requireKey, env } from "../src/env"
+
+    // required — throws with a helpful message if missing
+    const apiKey = requireKey("OPENROUTESERVICE_API_KEY", { tool: "drive-matrix" })
+
+    // optional — read directly from the typed env object
+    const optional = env.HERE_API_KEY  // string | undefined
+
+TypeScript only allows keys defined in `EnvSchema`. Unknown keys are caught at compile time.

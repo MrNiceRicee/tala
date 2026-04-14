@@ -30,6 +30,7 @@ See `CONVENTIONS.md` for full rules and `bun run lab help` for the CLI.
 - `topics/index.md` — master catalog, regenerated via `lab index`
 - `archive/` — inactive or finished work *(gitignored content)*
 - `tools/` — personal reusable scripts across topics *(gitignored content)*
+- `.env` — API keys for tools *(gitignored, see `.env.example` for the template)*
 - `src/` — CLI source (Bun + TypeScript + EffectTS v4)
 
 The tool is shareable. The research content stays local.
