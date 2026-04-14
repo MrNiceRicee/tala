@@ -8,7 +8,9 @@
     "lint": "biome check src/ test/ && linteffect check src/",
     "lint:fix": "biome check --write src/ test/",
     "lint:biome": "biome check src/ test/",
-    "lint:effect": "linteffect check src/"
+    "lint:effect": "linteffect check src/",
+    "typecheck": "tsc --noEmit",
+    "check": "bun run typecheck && bun run lint && bun test"
   },
   "dependencies": {
     "effect": "4.0.0-beta.48",
