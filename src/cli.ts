@@ -8,6 +8,7 @@ import { refreshIndex } from "./commands/index";
 import { createTopic } from "./commands/new";
 import { applyRefine, prepareRefine } from "./commands/refine";
 import { search } from "./commands/search";
+import { listTools, runTool } from "./commands/tool";
 import { runValidation } from "./commands/validate";
 import { prepareVerify } from "./commands/verify";
 
@@ -26,6 +27,8 @@ const commandDescriptions: Record<string, string> = {
 	conventions: "regenerate CONVENTIONS.md from definitions",
 	help: "show conventions and usage",
 	refine: "tournament-refine a topic section",
+	tool: "run a reusable tool from tools/ on a topic",
+	tools: "list available tools",
 };
 
 function printHelp() {
@@ -207,6 +210,38 @@ switch (command) {
 		const sectionIdx = args.indexOf("--section");
 		const section = sectionIdx >= 0 ? args[sectionIdx + 1] : "Findings";
 		const output = await prepareRefine(labRoot, slug, section);
+		console.log(output);
+		break;
+	}
+
+	case "tool": {
+		const slug = args[1];
+		const toolName = args[2];
+		if (!slug || !toolName) {
+			console.error(
+				"usage: bun run lab tool <topic-slug> <tool-name> [-- args...]",
+			);
+			process.exit(1);
+		}
+		const dashDash = args.indexOf("--");
+		const toolArgs = dashDash >= 0 ? args.slice(dashDash + 1) : [];
+		const result = await runTool(labRoot, slug, toolName, toolArgs);
+		if (result.success) {
+			console.log(result.output);
+			console.log(`output saved: ${result.outputPath}`);
+		} else {
+			console.error(result.error);
+			process.exit(1);
+		}
+		break;
+	}
+
+	case "tools": {
+		const tools = await listTools(labRoot);
+		const output =
+			tools.length === 0
+				? "no tools available. drop .ts files into tools/ to get started."
+				: ["available tools:", "", ...tools.map((t) => `  ${t}`)].join("\n");
 		console.log(output);
 		break;
 	}

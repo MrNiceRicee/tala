@@ -37,6 +37,8 @@ Hub files may add: slug, tags, aliases, domain.
       criteria.md             topic-specific evaluation criteria (optional)
     topics/index.md           master catalog
     archive/                  inactive topics
+    tools/                    personal reusable scripts (gitignored)
+      *.ts                    drop any tool here, run via lab tool
 
 ## Hub note sections
 
@@ -75,6 +77,20 @@ Set a topic's domain in hub frontmatter: `domain: software`
 3. Full source text — only for sources linked from claims being checked
 4. Computation outputs — when claims reference computed data
 5. Related topic hubs — when cross-references exist
+
+## Tools
+
+Reusable scripts live in tools/ at repo root. Unlike topic-local computations, tools work across multiple topics (e.g., a drive-matrix calculator usable by any trip research).
+
+Run a tool:
+
+    bun run lab tool <topic-slug> <tool-name> [-- args...]
+
+Output is captured to the topic's computations/ folder with provenance.
+
+List tools:
+
+    bun run lab tools
 
 ## CLI commands
 

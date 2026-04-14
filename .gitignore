@@ -26,3 +26,8 @@ sketch/*
 archive/*
 !archive/.gitkeep
 !archive/README.md
+
+# personal tools (reusable scripts across topics)
+tools/*
+!tools/.gitkeep
+!tools/README.md
