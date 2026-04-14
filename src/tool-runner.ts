@@ -1,4 +1,5 @@
-import { Effect, Option, Predicate, Schema } from "effect";
+import { BunRuntime, BunServices } from "@effect/platform-bun";
+import { Console, Effect, Option, Predicate, Schema, Stdio } from "effect";
 
 export interface ToolDefinition<A, I> {
 	name: string;
@@ -6,7 +7,6 @@ export interface ToolDefinition<A, I> {
 	run: (args: A) => ReturnType<typeof readTextFile>;
 }
 
-// wrap an unknown thrown value into an Error with context
 function wrapError(context: string, e: unknown): Error {
 	return Option.match(Option.liftPredicate(e, Predicate.isError), {
 		onNone: () => new Error(`${context}: ${String(e)}`),
@@ -14,9 +14,6 @@ function wrapError(context: string, e: unknown): Error {
 	});
 }
 
-// parses bun/process argv (everything after the script path) into a record
-// --key value → { key: "value" }
-// --flag (no following value or next is another flag) → { flag: true }
 export function parseArgv(argv: string[]): Record<string, string | boolean> {
 	const result: Record<string, string | boolean> = {};
 	let i = 0;
@@ -88,30 +85,17 @@ export function fetchJson<A, I>(
 	});
 }
 
-export function defineTool<A, I>(def: ToolDefinition<A, I>): Promise<void> {
-	const argv = process.argv.slice(2);
-	const raw = parseArgv(argv);
-
+export function defineTool<A, I>(def: ToolDefinition<A, I>): void {
 	const program = Effect.gen(function* () {
+		const argv = yield* Stdio.Stdio.use((s) => s.args);
+		const raw = parseArgv(argv.slice(2));
 		const args = yield* Effect.try({
 			try: () => Schema.decodeUnknownSync(def.args)(raw),
 			catch: (e) => wrapError(`invalid args for tool "${def.name}"`, e),
 		});
 		const output = yield* def.run(args);
-		yield* Effect.sync(() => {
-			process.stdout.write(output);
-		});
+		yield* Console.log(output);
 	});
 
-	return Effect.runPromise(program).then(
-		() => {},
-		(err: unknown) => {
-			const msg = Option.match(Option.liftPredicate(err, Predicate.isError), {
-				onNone: () => String(err),
-				onSome: (e) => e.message,
-			});
-			process.stderr.write(`error: ${msg}\n`);
-			process.exit(1);
-		},
-	);
+	program.pipe(Effect.provide(BunServices.layer), BunRuntime.runMain);
 }
