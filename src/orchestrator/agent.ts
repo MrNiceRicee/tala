@@ -29,22 +29,34 @@ function buildArgs(
 	).filter((x): x is string => typeof x === "string");
 }
 
+async function spawnAndCollect(
+	command: string,
+	args: string[],
+	cwd?: string,
+): Promise<AgentResult> {
+	const proc = Bun.spawn([command, ...args], {
+		cwd,
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	const [stdout, stderr, exitCode] = await Promise.all([
+		new Response(proc.stdout).text(),
+		new Response(proc.stderr).text(),
+		proc.exited,
+	]);
+	return { output: stdout, stderr, exitCode };
+}
+
 // CLI executor — spawns a CLI process (claude, hermes, or any command)
 export function createCliExecutor(command: string) {
 	return (config: AgentConfig) =>
 		Effect.tryPromise({
-			try: async () => {
-				const args = buildArgs(config.mode, config.systemPrompt, config.input);
-				const proc = Bun.spawn([command, ...args], {
-					cwd: config.cwd,
-					stdout: "pipe",
-					stderr: "pipe",
-				});
-				const stdout = await new Response(proc.stdout).text();
-				const stderr = await new Response(proc.stderr).text();
-				const exitCode = await proc.exited;
-				return { output: stdout, stderr, exitCode } satisfies AgentResult;
-			},
+			try: () =>
+				spawnAndCollect(
+					command,
+					buildArgs(config.mode, config.systemPrompt, config.input),
+					config.cwd,
+				),
 			catch: (error) => new Error(`agent spawn failed: ${String(error)}`),
 		});
 }
@@ -71,19 +83,9 @@ export function runAgent(config: {
 	mode: "print" | "interactive";
 	cwd?: string;
 }) {
-	const { command, args, cwd } = config;
-	return Effect.tryPromise({
-		try: async () => {
-			const proc = Bun.spawn([command, ...args], {
-				cwd,
-				stdout: "pipe",
-				stderr: "pipe",
-			});
-			const stdout = await new Response(proc.stdout).text();
-			const stderr = await new Response(proc.stderr).text();
-			const exitCode = await proc.exited;
-			return { output: stdout, stderr, exitCode } satisfies AgentResult;
-		},
+	const program = Effect.tryPromise({
+		try: () => spawnAndCollect(config.command, config.args, config.cwd),
 		catch: (error) => new Error(`agent spawn failed: ${String(error)}`),
 	});
+	return program;
 }

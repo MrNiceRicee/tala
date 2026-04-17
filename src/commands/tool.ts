@@ -1,6 +1,15 @@
 import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { join } from "node:path";
+import { getRegisteredTool, runToolInProcess } from "../tool-runner";
+
+// Runtime-resolved tool load. Tools live at `<labRoot>/tools/<name>.ts` —
+// a path only known at call time, so static ESM `import "..."` won't work.
+// `createRequire` resolves CommonJS-style from this module's URL; Bun's loader
+// compiles the .ts file and runs the top-level `defineTool(…)` call as a
+// side effect, which is what populates the registry.
+const requireTool = createRequire(import.meta.url);
 
 export interface ToolResult {
 	success: boolean;
@@ -61,40 +70,39 @@ export async function runTool(
 		};
 	}
 
-	const computationsDir = join(topicDir, "computations");
-
 	try {
-		const proc = Bun.spawn(["bun", toolPath, ...args], {
-			cwd: topicDir,
-			stdout: "pipe",
-			stderr: "pipe",
-		});
+		// Side-effect load — running `defineTool(…, import.meta)` at module
+		// top level is what registers the tool. import.meta.main is false
+		// because this loader isn't the entry point, so runMain stays off.
+		requireTool(toolPath);
 
-		const stdout = await new Response(proc.stdout).text();
-		const stderr = await new Response(proc.stderr).text();
-		const exitCode = await proc.exited;
-
-		if (exitCode !== 0) {
+		const def = getRegisteredTool(toolName);
+		if (!def) {
 			return {
 				success: false,
-				output: stdout,
-				error: `tool exited with code ${exitCode}: ${stderr}`,
+				output: "",
+				error: `tool "${toolName}" did not register via defineTool`,
 			};
 		}
 
+		// Tools resolve relative paths (e.g., "computations/points.json") via
+		// the WorkingDir FiberRef set inside runToolInProcess — no chdir.
+		const output = await runToolInProcess(def, args, topicDir);
+
+		const computationsDir = join(topicDir, "computations");
 		const outputPath = join(computationsDir, `${toolName}.output.md`);
 		const title = toolName
 			.replace(/[-_]/g, " ")
 			.replace(/\b\w/g, (c) => c.toUpperCase());
-		const content = generateToolOutput(title, toolName, args, stdout);
+		const content = generateToolOutput(title, toolName, args, output);
 		await Bun.write(outputPath, content);
 
-		return { success: true, output: stdout, outputPath };
+		return { success: true, output, outputPath };
 	} catch (e) {
 		return {
 			success: false,
 			output: "",
-			error: `run error: ${String(e)}`,
+			error: `run error: ${e instanceof Error ? e.message : String(e)}`,
 		};
 	}
 }

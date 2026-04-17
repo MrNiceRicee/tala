@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
+import { Effect, Schema } from "effect";
 import { createTopic } from "../../src/commands/new";
 import { listTools, runTool } from "../../src/commands/tool";
+import { defineTool } from "../../src/tool-runner";
 import { cleanupTempLab, createTempLab } from "../helpers";
 
 let labRoot: string;
@@ -18,12 +20,16 @@ afterEach(async () => {
 describe("runTool", () => {
 	it("runs a tool and captures output", async () => {
 		await createTopic(labRoot, "Test Topic");
-
 		await mkdir(join(labRoot, "tools"), { recursive: true });
-		await Bun.write(
-			join(labRoot, "tools", "echo-test.ts"),
-			'console.log("tool result: hello")',
-		);
+		// Stub file — existsSync passes, requireTool imports it as a no-op;
+		// the tool is registered directly so we don't need node_modules resolution
+		// to work from a /tmp labRoot.
+		await Bun.write(join(labRoot, "tools", "echo-test.ts"), "// stub\n");
+		defineTool({
+			name: "echo-test",
+			args: Schema.Struct({}),
+			run: () => Effect.succeed("tool result: hello"),
+		});
 
 		const result = await runTool(labRoot, "test-topic", "echo-test", []);
 		expect(result.success).toBe(true);
@@ -51,7 +57,7 @@ describe("runTool", () => {
 
 	it("fails when topic does not exist", async () => {
 		await mkdir(join(labRoot, "tools"), { recursive: true });
-		await Bun.write(join(labRoot, "tools", "any-tool.ts"), 'console.log("hi")');
+		await Bun.write(join(labRoot, "tools", "any-tool.ts"), "// stub\n");
 		const result = await runTool(labRoot, "no-topic", "any-tool", []);
 		expect(result.success).toBe(false);
 		expect(result.error).toContain("topic not found");
@@ -60,17 +66,19 @@ describe("runTool", () => {
 	it("passes args to the tool", async () => {
 		await createTopic(labRoot, "Args Topic");
 		await mkdir(join(labRoot, "tools"), { recursive: true });
-		await Bun.write(
-			join(labRoot, "tools", "args-tool.ts"),
-			'console.log(Bun.argv.slice(2).join(", "))',
-		);
+		await Bun.write(join(labRoot, "tools", "args-tool.ts"), "// stub\n");
+		defineTool({
+			name: "args-tool",
+			args: Schema.Struct({ foo: Schema.optional(Schema.String) }),
+			run: (args) => Effect.succeed(`foo=${args.foo ?? "none"}`),
+		});
 
 		const result = await runTool(labRoot, "args-topic", "args-tool", [
 			"--foo",
 			"bar",
 		]);
 		expect(result.success).toBe(true);
-		expect(result.output).toContain("--foo, bar");
+		expect(result.output).toContain("foo=bar");
 	});
 });
 

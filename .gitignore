@@ -36,3 +36,6 @@ archive/*
 tools/*
 !tools/.gitkeep
 !tools/README.md
+
+# HTTP cache (keyed by url+body hash; speeds up repeated tool runs, preserves API quota)
+.cache/
