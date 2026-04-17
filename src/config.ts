@@ -17,6 +17,7 @@ export const TalaConfigSchema = Schema.Struct({
 	topicsDir: Schema.optional(Schema.String),
 	toolsDir: Schema.optional(Schema.String),
 	cacheDir: Schema.optional(Schema.String),
+	envFile: Schema.optional(Schema.String),
 	apis: Schema.optional(Schema.Array(Schema.String)),
 });
 
@@ -27,6 +28,7 @@ export interface ResolvedConfig {
 	topicsDir: string;
 	toolsDir: string;
 	cacheDir: string;
+	envFile: string;
 	apis: readonly string[];
 }
 
@@ -34,6 +36,7 @@ const DEFAULTS = {
 	topicsDir: "./topics",
 	toolsDir: "./tools",
 	cacheDir: "./.cache",
+	envFile: "./.tala/.env",
 	apis: [] as readonly string[],
 };
 
@@ -59,6 +62,7 @@ function computeAndCache(labRoot: string): ResolvedConfig {
 			topicsDir: c.topicsDir ?? DEFAULTS.topicsDir,
 			toolsDir: c.toolsDir ?? DEFAULTS.toolsDir,
 			cacheDir: c.cacheDir ?? DEFAULTS.cacheDir,
+			envFile: c.envFile ?? DEFAULTS.envFile,
 			apis: c.apis ?? DEFAULTS.apis,
 		}),
 	});
@@ -68,6 +72,7 @@ function computeAndCache(labRoot: string): ResolvedConfig {
 		topicsDir: resolveRelativePath(labRoot, fields.topicsDir),
 		toolsDir: resolveRelativePath(labRoot, fields.toolsDir),
 		cacheDir: resolveRelativePath(labRoot, fields.cacheDir),
+		envFile: resolveRelativePath(labRoot, fields.envFile),
 		apis: fields.apis,
 	};
 
@@ -116,4 +121,8 @@ export function toolPath(labRoot: string, name: string): string {
 
 export function cacheRoot(labRoot: string): string {
 	return loadConfig(labRoot).cacheDir;
+}
+
+export function envFilePath(labRoot: string): string {
+	return loadConfig(labRoot).envFile;
 }

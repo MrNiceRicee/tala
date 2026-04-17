@@ -4,6 +4,7 @@ import { Console, Data, Effect, Match, Runtime, Stdio } from "effect";
 import { runCheck } from "./commands/check";
 import { runComputation } from "./commands/compute";
 import { generateConventions } from "./commands/conventions";
+import { runEnvCheck, runEnvSync } from "./commands/env";
 import { prepareGather } from "./commands/gather";
 import { parseGetArgs, runGet } from "./commands/get";
 import { runHelp } from "./commands/help";
@@ -15,6 +16,8 @@ import { search } from "./commands/search";
 import { runTool } from "./commands/tool";
 import { runValidation } from "./commands/validate";
 import { prepareVerify } from "./commands/verify";
+import { envFilePath } from "./config";
+import { loadEnvFile } from "./env-loader";
 
 class CliError extends Data.TaggedError("CliError")<{
 	readonly message: string;
@@ -44,6 +47,7 @@ const commandDescriptions: Record<string, string> = {
 	refine: "tournament-refine a topic section",
 	tool: "run a reusable tool from tools/ on a topic",
 	tools: "list available tools (alias for `tala get tools`)",
+	env: "sync .env.example from tool metadata, or check required keys are set",
 };
 
 const helpLines = [
@@ -113,6 +117,38 @@ const usageRefinePrepare = Console.error(
 			"       bun run lab refine apply <topic-slug> --section Findings",
 		),
 	),
+	Effect.andThen(exit1),
+);
+
+const envSyncEffect = Effect.gen(function* () {
+	const result = yield* Effect.promise(() => runEnvSync(labRoot));
+	yield* Console.log(
+		`wrote ${result.examplePath} (${result.keysWritten.length} keys)`,
+	);
+	const addedList = Effect.succeed(result.added.length > 0);
+	yield* Console.log(`  added: ${result.added.join(", ")}`).pipe(
+		Effect.when(addedList),
+	);
+	const removedList = Effect.succeed(result.removed.length > 0);
+	yield* Console.log(`  removed: ${result.removed.join(", ")}`).pipe(
+		Effect.when(removedList),
+	);
+});
+
+const envCheckEffect = Effect.gen(function* () {
+	const result = yield* Effect.promise(() => runEnvCheck(labRoot));
+	yield* Console.log(`env file: ${result.envFile}`);
+	yield* Console.log(
+		`required: ${result.required.length}  present: ${result.present.length}  missing: ${result.missing.length}`,
+	);
+	const hasMissing = Effect.succeed(result.missing.length > 0);
+	yield* Console.error(`missing: ${result.missing.join(", ")}`).pipe(
+		Effect.andThen(exit1),
+		Effect.when(hasMissing),
+	);
+});
+
+const envUsage = Console.error("usage: tala env sync | tala env check").pipe(
 	Effect.andThen(exit1),
 );
 
@@ -357,12 +393,27 @@ const dispatchEffect = Effect.gen(function* () {
 			break;
 		}
 
+		case "env": {
+			const sub = args[1];
+			yield* Match.value(sub).pipe(
+				Match.when("sync", () => envSyncEffect),
+				Match.when("check", () => envCheckEffect),
+				Match.orElse(() => envUsage),
+			);
+			break;
+		}
+
 		default:
 			yield* Console.log(`[lab] command "${command}" not yet implemented`);
 	}
 });
 
 const program = Effect.gen(function* () {
+	// Load env file (config.envFile, defaults to ./.tala/.env) before any
+	// command runs so requireKey sees values set there. Shell env takes
+	// precedence - we never overwrite existing Bun.env entries.
+	yield* Effect.promise(() => loadEnvFile(envFilePath(labRoot)));
+
 	const argv = yield* Stdio.Stdio.use((s) => s.args);
 	const command = argv[0];
 	const needsHelp = !command || command === "--help" || command === "-h";

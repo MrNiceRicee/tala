@@ -2,7 +2,12 @@ import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { join } from "node:path";
-import { toolPath as resolveToolPath, toolsRoot, topicDir } from "../config";
+import {
+	cacheRoot,
+	toolPath as resolveToolPath,
+	toolsRoot,
+	topicDir,
+} from "../config";
 import { getRegisteredTool, runToolInProcess } from "../tool-runner";
 
 // Runtime-resolved tool load. Tools live at `<labRoot>/tools/<name>.ts` -
@@ -87,8 +92,14 @@ export async function runTool(
 		}
 
 		// Tools resolve relative paths (e.g., "computations/points.json") via
-		// the WorkingDir FiberRef set inside runToolInProcess - no chdir.
-		const output = await runToolInProcess(def, args, resolvedTopicDir);
+		// the WorkingDir Reference set inside runToolInProcess - no chdir.
+		// cacheDir comes from config so fetchJsonCached writes to the right place.
+		const output = await runToolInProcess(
+			def,
+			args,
+			resolvedTopicDir,
+			cacheRoot(labRoot),
+		);
 
 		const computationsDir = join(resolvedTopicDir, "computations");
 		const outputPath = join(computationsDir, `${toolName}.output.md`);
