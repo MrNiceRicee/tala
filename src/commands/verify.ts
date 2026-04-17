@@ -147,7 +147,7 @@ ${
 2. If you find a source, create a source note in topics/${slug}/sources/
 3. Update claim markers in the hub based on what you find
 4. Follow CONVENTIONS.md`
-		: "No corroboration search needed — all claims are addressed."
+		: "No corroboration search needed - all claims are addressed."
 }
 `;
 }

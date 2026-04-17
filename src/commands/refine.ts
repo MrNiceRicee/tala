@@ -105,7 +105,7 @@ ${context.criteria}
 ### Critic (constructive, fresh agent)
 ${criticPrompt(context.criteria)}
 
-### Adversary (destructive, fresh agent — must cite evidence for objections)
+### Adversary (destructive, fresh agent - must cite evidence for objections)
 ${adversaryPrompt(context.criteria)}
 
 ### Reviser (fresh agent)

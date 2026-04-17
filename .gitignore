@@ -1,4 +1,4 @@
-# secrets — api keys and tool credentials
+# secrets - api keys and tool credentials
 .env
 .env.local
 .env.*.local
@@ -23,7 +23,7 @@ Thumbs.db
 .vscode/
 .idea/
 
-# personal research content — stays local, not part of the tool
+# personal research content - stays local, not part of the tool
 topics/*
 !topics/.gitkeep
 sketch/*

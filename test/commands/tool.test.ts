@@ -21,7 +21,7 @@ describe("runTool", () => {
 	it("runs a tool and captures output", async () => {
 		await createTopic(labRoot, "Test Topic");
 		await mkdir(join(labRoot, "tools"), { recursive: true });
-		// Stub file — existsSync passes, requireTool imports it as a no-op;
+		// Stub file - existsSync passes, requireTool imports it as a no-op;
 		// the tool is registered directly so we don't need node_modules resolution
 		// to work from a /tmp labRoot.
 		await Bun.write(join(labRoot, "tools", "echo-test.ts"), "// stub\n");

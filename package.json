@@ -1,7 +1,7 @@
 {
   "name": "@mrnicericee/tala",
   "version": "0.1.0",
-  "description": "Claim-grounded research lab — topics, sources, claim markers, verify/refine pipeline, Effect-native tool runner.",
+  "description": "Claim-grounded research lab - topics, sources, claim markers, verify/refine pipeline, Effect-native tool runner.",
   "keywords": [
     "research",
     "knowledge-base",

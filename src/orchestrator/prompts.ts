@@ -23,9 +23,9 @@ export function verifierCheckPrompt(criteria: string): string {
 Your job: determine if the source actually supports the claim.
 
 Respond with exactly one of:
-- SUPPORTED — the source directly supports this claim
-- CONTRADICTED: <reason> — the source says something different
-- PARTIAL: <reason> — the source partially supports but with caveats
+- SUPPORTED - the source directly supports this claim
+- CONTRADICTED: <reason> - the source says something different
+- PARTIAL: <reason> - the source partially supports but with caveats
 
 Be precise. Quote the relevant part of the source in your reasoning.
 ${criteriaSection}`;
@@ -70,7 +70,7 @@ Identify specific problems:
 - organizational issues
 - claims that should have markers but don't
 
-For each problem, explain what's wrong and suggest how to fix it. Be specific — cite the exact claim.
+For each problem, explain what's wrong and suggest how to fix it. Be specific - cite the exact claim.
 
 If you find no problems, say "No issues found."
 ${criteriaSection}`;
@@ -87,9 +87,9 @@ For each claim in the section:
 
 CRITICAL RULES:
 - You MUST cite specific evidence from existing source notes only for every objection
-- Unfounded objections will be dropped — do not challenge without evidence
+- Unfounded objections will be dropped - do not challenge without evidence
 - "I found nothing wrong" is a valid and expected output
-- You do NOT search for new sources — that is the verifier's job
+- You do NOT search for new sources - that is the verifier's job
 - Your objections must be evidence-backed, not opinion-based
 ${criteriaSection}`;
 }
@@ -109,7 +109,7 @@ Your job:
 - Update claim markers based on the evidence status
 - Preserve all evidence links
 - Do not remove claims that survived the adversary's challenge
-- Do not add new claims — only improve existing ones
+- Do not add new claims - only improve existing ones
 
 Output the revised section as clean markdown, ready to replace the original.
 ${criteriaSection}`;

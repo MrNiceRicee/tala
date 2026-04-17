@@ -1,6 +1,6 @@
 # Tools
 
-Reusable scripts that work across topics. Stays local (gitignored) because tools are personal — API keys, preferences, specific data sources.
+Reusable scripts that work across topics. Stays local (gitignored) because tools are personal - API keys, preferences, specific data sources.
 
 ## Usage
 
@@ -24,7 +24,7 @@ Output captured to `topics/oahu-trip/computations/drive-matrix.output.md` citing
 
 ## Writing a tool
 
-Tools use `defineTool` from `src/tool-runner.ts` and must be Effect-native — no try/catch, no if-statements, no ternaries.
+Tools use `defineTool` from `src/tool-runner.ts` and must be Effect-native - no try/catch, no if-statements, no ternaries.
 
 Minimal scaffold:
 
@@ -75,10 +75,10 @@ Tools access keys via the shared helpers:
 
     import { requireKey, env } from "../src/env"
 
-    // required — throws with a helpful message if missing
+    // required - throws with a helpful message if missing
     const apiKey = requireKey("OPENROUTESERVICE_API_KEY", { tool: "drive-matrix" })
 
-    // optional — read directly from the typed env object
+    // optional - read directly from the typed env object
     const optional = env.HERE_API_KEY  // string | undefined
 
 TypeScript only allows keys defined in `EnvSchema`. Unknown keys are caught at compile time.

@@ -6,7 +6,7 @@ function helpMarkers(): string {
 		lines.push(`  *(${marker.label})*`.padEnd(26) + marker.description);
 	}
 	lines.push(
-		`${"  [[source-link]]".padEnd(26)}verified — the link is the proof`,
+		`${"  [[source-link]]".padEnd(26)}verified - the link is the proof`,
 	);
 	lines.push("");
 	lines.push("usage in markdown:");

@@ -47,7 +47,7 @@ async function spawnAndCollect(
 	return { output: stdout, stderr, exitCode };
 }
 
-// CLI executor — spawns a CLI process (claude, hermes, or any command)
+// CLI executor - spawns a CLI process (claude, hermes, or any command)
 export function createCliExecutor(command: string) {
 	return (config: AgentConfig) =>
 		Effect.tryPromise({
@@ -61,11 +61,11 @@ export function createCliExecutor(command: string) {
 		});
 }
 
-// the pluggable interface — any harness implements this
+// the pluggable interface - any harness implements this
 // inferred from createCliExecutor to stay annotation-free
 export type AgentExecutor = ReturnType<typeof createCliExecutor>;
 
-// default executor — uses claude CLI
+// default executor - uses claude CLI
 export const defaultExecutor: AgentExecutor = createCliExecutor("claude");
 
 // keep buildClaudeArgs and runAgent for backward compat in tests

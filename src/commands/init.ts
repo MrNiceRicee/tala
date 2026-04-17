@@ -42,10 +42,10 @@ function resolveDirs(visibility: "inline" | "nested") {
 }
 
 function buildEnvExample(selectedApis: readonly string[]): string {
-	const lines = ["# tala — environment keys", ""];
+	const lines = ["# tala - environment keys", ""];
 	const selected = API_CATALOG.filter((a) => selectedApis.includes(a.value));
 	for (const api of selected) {
-		lines.push(`# ${api.label} — ${api.hint}`);
+		lines.push(`# ${api.label} - ${api.hint}`);
 		lines.push(`${api.envKey}=`);
 		lines.push("");
 	}
@@ -90,7 +90,7 @@ async function mergeGitignore(
 function buildAgentsMd(): string {
 	return `# Agent Instructions
 
-This project uses [\`tala\`](https://github.com/MrNiceRicee/tala) — a claim-grounded research lab.
+This project uses [\`tala\`](https://github.com/MrNiceRicee/tala) - a claim-grounded research lab.
 
 Before editing any topic file, read the conventions below. They encode the discipline that keeps research outputs trustworthy.
 
@@ -119,12 +119,12 @@ async function prompt(): Promise<WizardAnswers | null> {
 						{
 							value: "inline",
 							label: "Inline",
-							hint: "./topics/, ./tools/ — visible at repo root (recommended for research-first repos)",
+							hint: "./topics/, ./tools/ - visible at repo root (recommended for research-first repos)",
 						},
 						{
 							value: "nested",
 							label: "Nested",
-							hint: "./.tala/topics/, ./.tala/tools/ — keep repo root clean",
+							hint: "./.tala/topics/, ./.tala/tools/ - keep repo root clean",
 						},
 					],
 					initialValue: "inline",
@@ -181,7 +181,7 @@ export async function runInit(cwd: string): Promise<InitResult> {
 	if (existsSync(configPath)) {
 		return {
 			success: false,
-			message: `already initialized — .tala/config.json exists at ${configPath}`,
+			message: `already initialized - .tala/config.json exists at ${configPath}`,
 			created: [],
 		};
 	}
@@ -257,7 +257,7 @@ export async function runInit(cwd: string): Promise<InitResult> {
 
 	return {
 		success: true,
-		message: `initialized — ${answers.visibility} layout, ${answers.trackResearch ? "tracked" : "ignored"} in git`,
+		message: `initialized - ${answers.visibility} layout, ${answers.trackResearch ? "tracked" : "ignored"} in git`,
 		created,
 	};
 }

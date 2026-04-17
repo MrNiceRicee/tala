@@ -12,7 +12,7 @@ import {
 	Stdio,
 } from "effect";
 
-// WorkingDir — Context.Reference holding the base directory that relative
+// WorkingDir - Context.Reference holding the base directory that relative
 // paths resolve against inside readTextFile/readJsonFile. The CLI overrides
 // via Effect.provideService before running a tool; direct `bun tools/xxx.ts`
 // invocations get the defaultValue (Bun.env.PWD or "."). Avoids process.chdir
@@ -119,14 +119,14 @@ export function fetchJson<A, I>(
 }
 
 // -----------------------------------------------------------------------------
-// Caching — HTTP cache keyed by hash(method + url + body). Opt-in per call via
+// Caching - HTTP cache keyed by hash(method + url + body). Opt-in per call via
 // fetchJsonCached. Cache dir is .cache/ at repo root (gitignored).
 // -----------------------------------------------------------------------------
 
 const REPO_ROOT = dirname(import.meta.dir);
 const CACHE_DIR = join(REPO_ROOT, ".cache");
 
-// Cache schema — fetchedAt preserved for debugging, expiresAt precomputed so
+// Cache schema - fetchedAt preserved for debugging, expiresAt precomputed so
 // freshness is a direct comparison and TTL changes in code don't retroactively
 // invalidate entries. Pre-expiresAt entries were migrated in place (jq one-shot);
 // any stragglers fail decode here and fall through to refetch (safe cache miss).
@@ -154,7 +154,7 @@ function cacheFilePath(key: string): string {
 }
 
 function ensureCacheDir(): void {
-	// recursive:true is idempotent — no existence check needed.
+	// recursive:true is idempotent - no existence check needed.
 	mkdirSync(CACHE_DIR, { recursive: true });
 }
 
@@ -175,7 +175,7 @@ function readCacheIfFresh(path: string) {
 	return program;
 }
 
-// ECMAScript max valid Date — ±8.64e15 ms from epoch (≈ ±275,760 years).
+// ECMAScript max valid Date - ±8.64e15 ms from epoch (≈ ±275,760 years).
 // Going past this produces an Invalid Date whose .toISOString() throws.
 const MAX_DATE_MS = 8_640_000_000_000_000;
 
@@ -287,7 +287,7 @@ function buildRunEffect<A, I>(def: ToolDefinition<A, I>, rawArgv: string[]) {
  * Runs a registered tool in the calling process. Returns the tool's output
  * string. The CLI uses this after `await import(toolPath)` to dispatch
  * without spawning a subprocess (saves ~160ms of Bun + Effect cold start).
- * `workingDir` scopes relative-path resolution inside the tool — no chdir.
+ * `workingDir` scopes relative-path resolution inside the tool - no chdir.
  */
 export async function runToolInProcess<A, I>(
 	def: ToolDefinition<A, I>,
@@ -308,7 +308,7 @@ export function defineTool<A, I>(
 ): void {
 	TOOL_REGISTRY.set(def.name, def);
 
-	// Direct invocation (`bun tools/xxx.ts`) — run as CLI and exit.
+	// Direct invocation (`bun tools/xxx.ts`) - run as CLI and exit.
 	// In-process dispatch by the lab CLI imports this module without being
 	// the entry point, so meta.main is false and we skip runMain.
 	Option.match(

@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import { join } from "node:path";
 import { getRegisteredTool, runToolInProcess } from "../tool-runner";
 
-// Runtime-resolved tool load. Tools live at `<labRoot>/tools/<name>.ts` —
+// Runtime-resolved tool load. Tools live at `<labRoot>/tools/<name>.ts` -
 // a path only known at call time, so static ESM `import "..."` won't work.
 // `createRequire` resolves CommonJS-style from this module's URL; Bun's loader
 // compiles the .ts file and runs the top-level `defineTool(…)` call as a
@@ -71,7 +71,7 @@ export async function runTool(
 	}
 
 	try {
-		// Side-effect load — running `defineTool(…, import.meta)` at module
+		// Side-effect load - running `defineTool(…, import.meta)` at module
 		// top level is what registers the tool. import.meta.main is false
 		// because this loader isn't the entry point, so runMain stays off.
 		requireTool(toolPath);
@@ -86,7 +86,7 @@ export async function runTool(
 		}
 
 		// Tools resolve relative paths (e.g., "computations/points.json") via
-		// the WorkingDir FiberRef set inside runToolInProcess — no chdir.
+		// the WorkingDir FiberRef set inside runToolInProcess - no chdir.
 		const output = await runToolInProcess(def, args, topicDir);
 
 		const computationsDir = join(topicDir, "computations");

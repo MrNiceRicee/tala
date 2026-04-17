@@ -89,11 +89,11 @@ Set a topic's domain in hub frontmatter: \`domain: software\`
 
 ## Context loading for AI agents
 
-1. Hub note — always read first
-2. Source frontmatter (title, url, key points) — as an index
-3. Full source text — only for sources linked from claims being checked
-4. Computation outputs — when claims reference computed data
-5. Related topic hubs — when cross-references exist
+1. Hub note - always read first
+2. Source frontmatter (title, url, key points) - as an index
+3. Full source text - only for sources linked from claims being checked
+4. Computation outputs - when claims reference computed data
+5. Related topic hubs - when cross-references exist
 
 ## Tools
 
@@ -135,10 +135,10 @@ Tools are Effect-native. Use \`defineTool\` from \`src/tool-runner.ts\`:
     export default await defineTool({ name: "my-tool", args: Args, run: program })
 
 Rules enforced by linteffect (covers tools/ in lint and lint:effect):
-- No \`const x = "string"\` at module scope — use defaults inline in \`Option.getOrElse(() => "...")\`
-- No \`Effect.succeed("literal")\` — compose values into Effects only at yield sites
+- No \`const x = "string"\` at module scope - use defaults inline in \`Option.getOrElse(() => "...")\`
+- No \`Effect.succeed("literal")\` - compose values into Effects only at yield sites
 - \`program\` must assign \`Effect.gen(...)\` to a local before returning
-- No nested Effect calls — assign inner Effects to variables first
+- No nested Effect calls - assign inner Effects to variables first
 
 ## API keys for tools
 

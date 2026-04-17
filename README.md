@@ -6,7 +6,7 @@
   \__\__,_|_|\__,_|
 ```
 
-*tagalog for both* note *and* star — *the fixed reference your thinking orients to.*
+*tagalog for both* note *and* star - *the fixed reference your thinking orients to.*
 
 Claim-grounded research lab. Write topics with explicit claim markers, cross-check sources, run deterministic tools on your data, and ship knowledge bases an agent (or a human) can trust.
 
@@ -63,10 +63,10 @@ tala tool caching-strategies benchmark   # runs ./tools/benchmark.ts on the topi
 
 ## Concepts
 
-- **Topics** — a folder of `topics/<slug>/` with a hub `.md`, `sources/`, `notes/`, and `computations/`. Hubs state *intent*, *questions*, *findings*; sources cite evidence; notes hold derivations; computations are tool outputs with provenance frontmatter (`tool:`, `args:`, `ran_at:`).
-- **Claim markers** — every factual statement carries its epistemic status. `*(unsupported)*` / `*(single-source)*` / `*(hypothesis)*` / `*(contradicted)*` / `[[source-link]]`. `tala validate` enforces them.
-- **Tools** — project-specific, Effect-native TypeScript files in `./tools/`. Register with `defineTool({...}, import.meta)`. Run via `tala tool <slug> <name>`. Outputs land in `topics/<slug>/computations/<name>.output.md`.
-- **HTTP cache** — `fetchJsonCached` keys requests by `sha256(method + url + body)`, writes to `./.cache/`. `expiresAt` precomputed per entry. Cache misses fail open.
+- **Topics** - a folder of `topics/<slug>/` with a hub `.md`, `sources/`, `notes/`, and `computations/`. Hubs state *intent*, *questions*, *findings*; sources cite evidence; notes hold derivations; computations are tool outputs with provenance frontmatter (`tool:`, `args:`, `ran_at:`).
+- **Claim markers** - every factual statement carries its epistemic status. `*(unsupported)*` / `*(single-source)*` / `*(hypothesis)*` / `*(contradicted)*` / `[[source-link]]`. `tala validate` enforces them.
+- **Tools** - project-specific, Effect-native TypeScript files in `./tools/`. Register with `defineTool({...}, import.meta)`. Run via `tala tool <slug> <name>`. Outputs land in `topics/<slug>/computations/<name>.output.md`.
+- **HTTP cache** - `fetchJsonCached` keys requests by `sha256(method + url + body)`, writes to `./.cache/`. `expiresAt` precomputed per entry. Cache misses fail open.
 
 ## Stack
 
@@ -74,7 +74,7 @@ Bun · TypeScript · Effect v4 (beta) · unified/remark · gray-matter · Biome 
 
 ## Sibling
 
-[`liham`](https://github.com/MrNiceRicee/liham) — terminal markdown previewer. Pairs well with `tala`: `liham topics/<slug>/<slug>.md` to read, `tala validate` to verify.
+[`liham`](https://github.com/MrNiceRicee/liham) - terminal markdown previewer. Pairs well with `tala`: `liham topics/<slug>/<slug>.md` to read, `tala validate` to verify.
 
 ## License
 
