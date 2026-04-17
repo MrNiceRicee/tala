@@ -50,8 +50,10 @@ tala tool caching-strategies benchmark   # runs ./tools/benchmark.ts on the topi
 |------------------------------------------|-----------------------------------------------------------|
 | `tala init`                              | scaffold `.tala/config.json`, `topics/`, `tools/`, `.env` |
 | `tala new "Title"`                       | create a new topic (hub + sources/ + notes/ + comps)      |
-| `tala get`                               | list resources (topics, tools)                            |
-| `tala get <resource> [<name>]`           | inspect a resource — see `--claims`, `--full`, `--format` |
+| `tala get`                               | list resources (topics, tools, cache, config, schema)     |
+| `tala get <resource> [<name>]`           | inspect a resource - see `--claims`, `--full`, `--format` |
+| `tala env sync`                          | regenerate `.env.example` from tool metadata              |
+| `tala env check`                         | verify required env keys are set (exits 1 on missing)     |
 | `tala index`                             | regenerate the topics index                               |
 | `tala validate [slug]`                   | structure, frontmatter, claim markers, link resolution    |
 | `tala search "query"`                    | full-text search across topics                            |
@@ -77,7 +79,25 @@ tala get topics <slug> --computations
 tala get topics <slug> --format json            # machine-readable summary
 tala get tools                                  # list tools + descriptions
 tala get tools <name>                           # tool args, env, cache policy
+tala get cache                                  # .cache/ entries with fresh/stale state
+tala get cache <hash> --fresh                   # only show if still valid
+tala get config                                 # resolved config (defaults vs overrides)
+tala get schema                                 # list built-in framework schemas
+tala get schema claim-markers                   # enum of valid markers
 ```
+
+### `tala env` - environment key management
+
+Scans registered tools for their declared `env[]` arrays and keeps `.env.example` in sync.
+
+```sh
+tala env sync     # write required keys to `<envFile>.example`
+tala env check    # report missing / present keys; exit 1 on any missing
+```
+
+`envFile` defaults to `./.tala/.env` (override via `.tala/config.json` if you prefer the repo root).
+
+Precedence at startup: shell env > `envFile` values > defaults. The CLI never overwrites an already-set `Bun.env` entry.
 
 Pipe JSON to `jq` to triage claims:
 
