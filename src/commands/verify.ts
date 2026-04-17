@@ -1,5 +1,9 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import {
+	hubPath as resolveHubPath,
+	topicDir as resolveTopicDir,
+} from "../config";
 import { loadTopicCriteria } from "../orchestrator/criteria";
 import { verifierSearchPrompt } from "../orchestrator/prompts";
 import { parseFrontmatter } from "../parser/frontmatter";
@@ -26,7 +30,7 @@ export async function extractClaimsForVerification(
 	labRoot: string,
 	slug: string,
 ): Promise<VerificationClaims> {
-	const hubPath = join(labRoot, "topics", slug, `${slug}.md`);
+	const hubPath = resolveHubPath(labRoot, slug);
 	const withSources: ClaimWithSource[] = [];
 	const needingCorroboration: ClaimNeedingCorroboration[] = [];
 
@@ -85,7 +89,7 @@ export async function runSourceCheck(
 ): Promise<SourceCheckResult[]> {
 	const claims = await extractClaimsForVerification(labRoot, slug);
 	const results: SourceCheckResult[] = [];
-	const topicDir = join(labRoot, "topics", slug);
+	const topicDir = resolveTopicDir(labRoot, slug);
 
 	for (const claim of claims.withSources) {
 		const sourcePath = join(topicDir, `${claim.sourceTarget}.md`);

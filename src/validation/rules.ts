@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
+import { topicDir as resolveTopicDir, topicsRoot } from "../config";
 import { parseFrontmatter } from "../parser/frontmatter";
 import { parseMarkdown } from "../parser/markdown";
 import { CLAIM_MARKERS, MARKER_SEVERITY, type SeverityLevel } from "../schema";
@@ -141,7 +142,7 @@ export async function validateTopic(
 	labRoot: string,
 	slug: string,
 ): Promise<ValidationIssue[]> {
-	const topicDir = join(labRoot, "topics", slug);
+	const topicDir = resolveTopicDir(labRoot, slug);
 	const issues: ValidationIssue[] = [];
 
 	// structural: hub exists
@@ -297,7 +298,7 @@ export async function validateTopic(
 export async function validateAll(
 	labRoot: string,
 ): Promise<Map<string, ValidationIssue[]>> {
-	const topicsDir = join(labRoot, "topics");
+	const topicsDir = topicsRoot(labRoot);
 	const results = new Map<string, ValidationIssue[]>();
 
 	if (!existsSync(topicsDir)) return results;

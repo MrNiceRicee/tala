@@ -1,5 +1,9 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import {
+	hubPath as resolveHubPath,
+	topicDir as resolveTopicDir,
+} from "../config";
 import { parseFrontmatter } from "../parser/frontmatter";
 
 export interface CriteriaSet {
@@ -106,7 +110,7 @@ export async function loadTopicCriteria(
 	labRoot: string,
 	slug: string,
 ): Promise<string> {
-	const hubPath = join(labRoot, "topics", slug, `${slug}.md`);
+	const hubPath = resolveHubPath(labRoot, slug);
 	let domain: string | undefined;
 	if (existsSync(hubPath)) {
 		const raw = await Bun.file(hubPath).text();
@@ -119,7 +123,7 @@ export async function loadTopicCriteria(
 		}
 	}
 	let topicCriteria: CriteriaSet | undefined;
-	const criteriaPath = join(labRoot, "topics", slug, "criteria.md");
+	const criteriaPath = join(resolveTopicDir(labRoot, slug), "criteria.md");
 	if (existsSync(criteriaPath)) {
 		const raw = await Bun.file(criteriaPath).text();
 		const parsed = parseFrontmatter(raw);

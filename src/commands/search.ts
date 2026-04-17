@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
+import { topicsRoot } from "../config";
 import { parseFrontmatter } from "../parser/frontmatter";
 
 export interface SearchHit {
@@ -65,7 +66,7 @@ export async function search(
 	labRoot: string,
 	query: string,
 ): Promise<SearchHit[]> {
-	const topicsDir = join(labRoot, "topics");
+	const topicsDir = topicsRoot(labRoot);
 	const hits = await searchDir(topicsDir, "topics", query);
 
 	return hits.sort(

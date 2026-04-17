@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
+import { topicDir as resolveTopicDir } from "../config";
 
 export interface CreateTopicResult {
 	success: boolean;
@@ -65,7 +66,7 @@ export async function createTopic(
 	title: string,
 ): Promise<CreateTopicResult> {
 	const slug = slugify(title);
-	const topicDir = join(labRoot, "topics", slug);
+	const topicDir = resolveTopicDir(labRoot, slug);
 
 	if (existsSync(topicDir)) {
 		return {

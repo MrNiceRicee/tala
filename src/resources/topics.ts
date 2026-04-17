@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { topicsRoot } from "../config";
 import { parseFrontmatter } from "../parser/frontmatter";
 import { CLAIM_MARKER_LABELS } from "../schema";
 import type {
@@ -57,7 +58,9 @@ export interface TopicDetail extends TopicMeta {
 	computations: ComputationMeta[];
 }
 
-const topicsDir = (labRoot: string) => join(labRoot, "topics");
+// Resolves to the configured topicsDir (defaults to ./topics when no
+// .tala/config.json is present).
+const topicsDir = (labRoot: string) => topicsRoot(labRoot);
 
 function getString(
 	data: Record<string, unknown>,

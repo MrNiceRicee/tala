@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
+import { hubPath as resolveHubPath, topicDir } from "../config";
 import { loadTopicCriteria } from "../orchestrator/criteria";
 import { gathererPrompt } from "../orchestrator/prompts";
 import { parseFrontmatter } from "../parser/frontmatter";
@@ -17,7 +18,7 @@ export async function buildGatherContext(
 	labRoot: string,
 	slug: string,
 ): Promise<GatherContext> {
-	const hubPath = join(labRoot, "topics", slug, `${slug}.md`);
+	const hubPath = resolveHubPath(labRoot, slug);
 	let questions = "";
 	let topicTitle = slug;
 
@@ -34,7 +35,7 @@ export async function buildGatherContext(
 		}
 	}
 
-	const sourcesDir = join(labRoot, "topics", slug, "sources");
+	const sourcesDir = join(topicDir(labRoot, slug), "sources");
 	const existingTitles: string[] = [];
 	if (existsSync(sourcesDir)) {
 		const files = await readdir(sourcesDir);
