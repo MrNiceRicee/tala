@@ -7,6 +7,7 @@ import { generateConventions } from "./commands/conventions";
 import { prepareGather } from "./commands/gather";
 import { runHelp } from "./commands/help";
 import { refreshIndex } from "./commands/index";
+import { runInit } from "./commands/init";
 import { createTopic } from "./commands/new";
 import { applyRefine, prepareRefine } from "./commands/refine";
 import { search } from "./commands/search";
@@ -27,6 +28,7 @@ class CliError extends Data.TaggedError("CliError")<{
 const labRoot = Bun.env.PWD ?? ".";
 
 const commandDescriptions: Record<string, string> = {
+	init: "scaffold .tala/config.json, topics/, tools/ in the current directory",
 	new: "create a new research topic",
 	index: "regenerate the topics index",
 	validate: "validate repo structure and content",
@@ -162,6 +164,16 @@ const dispatchEffect = Effect.gen(function* () {
 	);
 
 	switch (command) {
+		case "init": {
+			const result = yield* Effect.promise(() => runInit(labRoot));
+			const notSuccess = Effect.succeed(!result.success);
+			yield* Console.error(result.message).pipe(
+				Effect.andThen(exit1),
+				Effect.when(notSuccess),
+			);
+			break;
+		}
+
 		case "new": {
 			const title = args.slice(1).join(" ");
 			const noTitle = Effect.succeed(!title);
