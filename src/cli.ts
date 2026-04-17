@@ -5,13 +5,14 @@ import { runCheck } from "./commands/check";
 import { runComputation } from "./commands/compute";
 import { generateConventions } from "./commands/conventions";
 import { prepareGather } from "./commands/gather";
+import { parseGetArgs, runGet } from "./commands/get";
 import { runHelp } from "./commands/help";
 import { refreshIndex } from "./commands/index";
 import { runInit } from "./commands/init";
 import { createTopic } from "./commands/new";
 import { applyRefine, prepareRefine } from "./commands/refine";
 import { search } from "./commands/search";
-import { listTools, runTool } from "./commands/tool";
+import { runTool } from "./commands/tool";
 import { runValidation } from "./commands/validate";
 import { prepareVerify } from "./commands/verify";
 
@@ -30,6 +31,7 @@ const labRoot = Bun.env.PWD ?? ".";
 const commandDescriptions: Record<string, string> = {
 	init: "scaffold .tala/config.json, topics/, tools/ in the current directory",
 	new: "create a new research topic",
+	get: "list or inspect resources (topics, tools, …)",
 	index: "regenerate the topics index",
 	validate: "validate repo structure and content",
 	search: "search across topics",
@@ -41,7 +43,7 @@ const commandDescriptions: Record<string, string> = {
 	help: "show conventions and usage",
 	refine: "tournament-refine a topic section",
 	tool: "run a reusable tool from tools/ on a topic",
-	tools: "list available tools",
+	tools: "list available tools (alias for `tala get tools`)",
 };
 
 const helpLines = [
@@ -72,18 +74,6 @@ function sectionFromArgs(args: readonly string[]): string {
 	return Match.value(sectionIdx >= 0).pipe(
 		Match.when(true, () => args[sectionIdx + 1] ?? "Findings"),
 		Match.orElse(() => "Findings"),
-	);
-}
-
-function toolsOutput(tools: string[]): string {
-	return Match.value(tools.length === 0).pipe(
-		Match.when(
-			true,
-			() => "no tools available. drop .ts files into tools/ to get started.",
-		),
-		Match.orElse(() =>
-			["available tools:", "", ...tools.map((t) => `  ${t}`)].join("\n"),
-		),
 	);
 }
 
@@ -340,8 +330,30 @@ const dispatchEffect = Effect.gen(function* () {
 		}
 
 		case "tools": {
-			const tools = yield* Effect.promise(() => listTools(labRoot));
-			yield* Console.log(toolsOutput(tools));
+			// Alias for `tala get tools`. Delegates so output stays consistent.
+			const result = yield* Effect.promise(() =>
+				runGet(labRoot, {
+					resource: "tools",
+					fullMode: false,
+					format: "markdown",
+					filters: {},
+				}),
+			);
+			yield* Console.log(result.output);
+			break;
+		}
+
+		case "get": {
+			const getArgv = args.slice(1);
+			const getArgs = parseGetArgs(getArgv);
+			const result = yield* Effect.promise(() => runGet(labRoot, getArgs));
+			const success = Effect.succeed(result.success);
+			const notSuccess = Effect.succeed(!result.success);
+			yield* Console.log(result.output).pipe(Effect.when(success));
+			yield* Console.error(result.error ?? "").pipe(
+				Effect.andThen(exit1),
+				Effect.when(notSuccess),
+			);
 			break;
 		}
 
