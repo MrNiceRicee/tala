@@ -96,6 +96,9 @@ describe("runGet", () => {
 		const parsed = JSON.parse(result.output);
 		expect(Array.isArray(parsed)).toBe(true);
 		expect(parsed.map((r: { name: string }) => r.name).sort()).toEqual([
+			"cache",
+			"config",
+			"schema",
 			"tools",
 			"topics",
 		]);
