@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { mkdirSync } from "node:fs";
-import { dirname, isAbsolute, join } from "node:path";
+import { isAbsolute, join } from "node:path";
 import { BunRuntime, BunServices } from "@effect/platform-bun";
 import {
 	Console,
@@ -129,11 +129,19 @@ export function fetchJson<A, I>(
 
 // -----------------------------------------------------------------------------
 // Caching - HTTP cache keyed by hash(method + url + body). Opt-in per call via
-// fetchJsonCached. Cache dir is .cache/ at repo root (gitignored).
+// fetchJsonCached. Cache dir comes from the CacheDir Reference, which the CLI
+// fills from `config.cacheDir` (defaults to `./.cache` under cwd).
+//
+// Direct `bun tools/xxx.ts` invocations (no CLI) get the Reference default:
+// `${PWD}/.cache`.
 // -----------------------------------------------------------------------------
 
-const REPO_ROOT = dirname(import.meta.dir);
-const CACHE_DIR = join(REPO_ROOT, ".cache");
+export const CacheDir = Context.Reference<{ readonly path: string }>(
+	"CacheDir",
+	{
+		defaultValue: () => ({ path: join(defaultCwd(), ".cache") }),
+	},
+);
 
 // Cache schema - fetchedAt preserved for debugging, expiresAt precomputed so
 // freshness is a direct comparison and TTL changes in code don't retroactively
@@ -158,13 +166,13 @@ function hashRequest(url: string, init: RequestInit): string {
 		.slice(0, 32);
 }
 
-function cacheFilePath(key: string): string {
-	return join(CACHE_DIR, `${key}.json`);
+function cacheFilePath(cacheDir: string, key: string): string {
+	return join(cacheDir, `${key}.json`);
 }
 
-function ensureCacheDir(): void {
+function ensureCacheDir(cacheDir: string): void {
 	// recursive:true is idempotent - no existence check needed.
-	mkdirSync(CACHE_DIR, { recursive: true });
+	mkdirSync(cacheDir, { recursive: true });
 }
 
 function isFresh(entry: CacheEntryType): boolean {
@@ -199,10 +207,15 @@ function computeExpiresAt(nowMs: number, ttlMinutes: number): string {
 	return new Date(clamped).toISOString();
 }
 
-function writeCacheEntry(path: string, data: unknown, ttlMinutes: number) {
+function writeCacheEntry(
+	cacheDir: string,
+	path: string,
+	data: unknown,
+	ttlMinutes: number,
+) {
 	const program = Effect.tryPromise({
 		try: async () => {
-			ensureCacheDir();
+			ensureCacheDir(cacheDir);
 			const now = Date.now();
 			const entry: CacheEntryType = {
 				fetchedAt: new Date(now).toISOString(),
@@ -236,12 +249,13 @@ export function fetchJsonCached<A, I>(
 	options: CacheOptions,
 ) {
 	const program = Effect.gen(function* () {
+		const { path: cacheDir } = yield* CacheDir;
 		const key = options.cacheKey ?? hashRequest(url, init);
-		const cachePath = cacheFilePath(key);
+		const cachePath = cacheFilePath(cacheDir, key);
 
 		const fetchAndCache = fetchJson(url, init, schema).pipe(
 			Effect.tap((data) =>
-				writeCacheEntry(cachePath, data, options.ttlMinutes),
+				writeCacheEntry(cacheDir, cachePath, data, options.ttlMinutes),
 			),
 		);
 
@@ -297,15 +311,20 @@ function buildRunEffect<A, I>(def: ToolDefinition<A, I>, rawArgv: string[]) {
  * string. The CLI uses this after `await import(toolPath)` to dispatch
  * without spawning a subprocess (saves ~160ms of Bun + Effect cold start).
  * `workingDir` scopes relative-path resolution inside the tool - no chdir.
+ * `cacheDir` is where fetchJsonCached stores entries; defaults to
+ * `${workingDir}/.cache` if omitted so callers can pass just the topic dir.
  */
 export async function runToolInProcess<A, I>(
 	def: ToolDefinition<A, I>,
 	argv: string[],
 	workingDir: string,
+	cacheDir?: string,
 ): Promise<string> {
+	const resolvedCacheDir = cacheDir ?? join(workingDir, ".cache");
 	return Effect.runPromise(
 		buildRunEffect(def, argv).pipe(
 			Effect.provideService(WorkingDir, { path: workingDir }),
+			Effect.provideService(CacheDir, { path: resolvedCacheDir }),
 			Effect.provide(BunServices.layer),
 		),
 	);
