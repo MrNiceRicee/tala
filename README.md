@@ -6,7 +6,7 @@
   \__\__,_|_|\__,_|
 ```
 
-*tagalog for both* note *and* star - *the fixed reference your thinking orients to.*
+*tagalog for both* note *and* star, *the fixed reference your thinking orients to.*
 
 Claim-grounded research lab. Write topics with explicit claim markers, cross-check sources, run deterministic tools on your data, and ship knowledge bases an agent (or a human) can trust.
 
