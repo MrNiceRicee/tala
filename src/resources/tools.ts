@@ -1,6 +1,7 @@
 import { existsSync, readdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
+import { toolsRoot } from "../config";
 import { getRegisteredTool } from "../tool-runner";
 import type { Resource, ResourceContext } from "./types";
 
@@ -23,7 +24,9 @@ export interface ToolDetail extends ToolMeta {
 }
 
 const requireTool = createRequire(import.meta.url);
-const toolsDir = (labRoot: string) => join(labRoot, "tools");
+// Resolves to the configured toolsDir (defaults to ./tools when no
+// .tala/config.json is present).
+const toolsDir = (labRoot: string) => toolsRoot(labRoot);
 
 // Load a tool module by side effect so `defineTool(…)` registers it.
 function loadTool(labRoot: string, name: string): void {

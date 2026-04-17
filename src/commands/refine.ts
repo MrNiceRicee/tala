@@ -1,6 +1,10 @@
 import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
+import {
+	hubPath as resolveHubPath,
+	topicDir as resolveTopicDir,
+} from "../config";
 import { loadConfig } from "../orchestrator/config";
 import { loadTopicCriteria } from "../orchestrator/criteria";
 import {
@@ -26,7 +30,7 @@ export async function buildRefineContext(
 	slug: string,
 	sectionName: string,
 ): Promise<RefineContext> {
-	const hubPath = join(labRoot, "topics", slug, `${slug}.md`);
+	const hubPath = resolveHubPath(labRoot, slug);
 	let section = "";
 	let hubContent = "";
 
@@ -42,7 +46,7 @@ export async function buildRefineContext(
 
 	const wikilinks = extractWikilinks(section);
 	const sourceTexts: string[] = [];
-	const topicDir = join(labRoot, "topics", slug);
+	const topicDir = resolveTopicDir(labRoot, slug);
 
 	for (const link of wikilinks) {
 		const sourcePath = join(topicDir, `${link.target}.md`);
@@ -180,7 +184,7 @@ export async function applyRefine(
 	refinedSection: string,
 	logContent?: string,
 ): Promise<void> {
-	const hubPath = join(labRoot, "topics", slug, `${slug}.md`);
+	const hubPath = resolveHubPath(labRoot, slug);
 	if (!existsSync(hubPath)) {
 		throw new Error(`hub not found: ${hubPath}`);
 	}
@@ -190,7 +194,7 @@ export async function applyRefine(
 	await Bun.write(hubPath, updated);
 
 	if (logContent) {
-		const logPath = join(labRoot, "topics", slug, "refine-log.md");
+		const logPath = join(resolveTopicDir(labRoot, slug), "refine-log.md");
 		await Bun.write(logPath, logContent);
 	}
 }
