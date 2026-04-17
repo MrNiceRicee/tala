@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { join } from "node:path";
+import { toolPath as resolveToolPath, toolsRoot, topicDir } from "../config";
 import { getRegisteredTool, runToolInProcess } from "../tool-runner";
 
 // Runtime-resolved tool load. Tools live at `<labRoot>/tools/<name>.ts` -
@@ -55,18 +56,18 @@ export async function runTool(
 	toolName: string,
 	args: string[],
 ): Promise<ToolResult> {
-	const toolPath = join(labRoot, "tools", `${toolName}.ts`);
-	const topicDir = join(labRoot, "topics", slug);
+	const toolPath = resolveToolPath(labRoot, toolName);
+	const resolvedTopicDir = topicDir(labRoot, slug);
 
 	if (!existsSync(toolPath)) {
 		return { success: false, output: "", error: `tool not found: ${toolPath}` };
 	}
 
-	if (!existsSync(topicDir)) {
+	if (!existsSync(resolvedTopicDir)) {
 		return {
 			success: false,
 			output: "",
-			error: `topic not found: ${topicDir}`,
+			error: `topic not found: ${resolvedTopicDir}`,
 		};
 	}
 
@@ -87,9 +88,9 @@ export async function runTool(
 
 		// Tools resolve relative paths (e.g., "computations/points.json") via
 		// the WorkingDir FiberRef set inside runToolInProcess - no chdir.
-		const output = await runToolInProcess(def, args, topicDir);
+		const output = await runToolInProcess(def, args, resolvedTopicDir);
 
-		const computationsDir = join(topicDir, "computations");
+		const computationsDir = join(resolvedTopicDir, "computations");
 		const outputPath = join(computationsDir, `${toolName}.output.md`);
 		const title = toolName
 			.replace(/[-_]/g, " ")
@@ -108,7 +109,7 @@ export async function runTool(
 }
 
 export async function listTools(labRoot: string): Promise<string[]> {
-	const toolsDir = join(labRoot, "tools");
+	const toolsDir = toolsRoot(labRoot);
 
 	if (!existsSync(toolsDir)) {
 		return [];

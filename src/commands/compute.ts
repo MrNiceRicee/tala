@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { topicDir } from "../config";
 
 export interface ComputeResult {
 	success: boolean;
@@ -44,7 +45,7 @@ export async function runComputation(
 	scriptName: string,
 	args: string[],
 ): Promise<ComputeResult> {
-	const computationsDir = join(labRoot, "topics", slug, "computations");
+	const computationsDir = join(topicDir(labRoot, slug), "computations");
 	const scriptPath = join(computationsDir, scriptName);
 
 	if (!existsSync(scriptPath)) {

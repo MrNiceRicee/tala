@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
+import { topicsRoot } from "../config";
 import { parseFrontmatter } from "../parser/frontmatter";
 
 export interface IndexResult {
@@ -19,7 +20,7 @@ function today(): string {
 }
 
 export async function refreshIndex(labRoot: string): Promise<IndexResult> {
-	const topicsDir = join(labRoot, "topics");
+	const topicsDir = topicsRoot(labRoot);
 	const indexPath = join(topicsDir, "index.md");
 	const entries: TopicEntry[] = [];
 
