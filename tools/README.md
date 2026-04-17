@@ -31,7 +31,9 @@ Minimal scaffold:
 ```ts
 import { Effect, Option, Schema } from "effect";
 import { requireKey } from "../src/env";
-import { defineTool, fetchJson, readJsonFile } from "../src/tool-runner";
+import { defineTool, fetchJsonCached, readJsonFile } from "../src/tool-runner";
+
+const CACHE_TTL_MINUTES = 7 * 24 * 60;
 
 const Args = Schema.Struct({
   "my-file": Schema.optional(Schema.String),
@@ -49,16 +51,36 @@ function program(args: typeof Args.Type) {
   return e;
 }
 
-export default await defineTool({ name: "my-tool", args: Args, run: program });
+defineTool(
+  {
+    name: "my-tool",
+    description: "one-line summary, shown by `tala get tools` and help output",
+    args: Args,
+    env: ["MY_API_KEY"],                   // optional, enumerated by future `tala env sync`
+    cache: { ttlMinutes: CACHE_TTL_MINUTES }, // optional, surfaced via `tala get tools <name>`
+    run: program,
+  },
+  import.meta,
+);
 ```
 
-Key rules:
+Required vs optional on `defineTool`:
+- Required: `name`, `args`, `run`
+- Optional: `description`, `env`, `cache`
+
+Always set `description`. `tala get tools` treats it as the tool's identity card; without it you get a bare `-`.
+
+Set `env` whenever the tool calls `requireKey`. Tooling enumerates this to regenerate `.env.example` and warn on missing keys.
+
+Set `cache` when the tool uses `fetchJsonCached` so the TTL is visible via `tala get tools <name>`, making cache policy auditable without reading the source.
+
+Key rules (enforced by linteffect):
 - Args schema: use `Schema.optional(Schema.String)` for optional fields; apply defaults with `Option.getOrElse` in the program body.
-- No `const x = "string"` at module scope (linteffect: `no-string-sentinel-const`).
-- No `Effect.succeed("literal")` (linteffect: `no-string-sentinel-return`).
-- `program` must assign `Effect.gen(...)` to a local variable before returning (linteffect: `no-effect-wrapper-alias`).
-- Nest Effect calls flat: assign inner Effects to variables before passing to outer ones (linteffect: `no-nested-effect-call`).
-- Helpers: `readJsonFile(path, Schema)`, `fetchJson(url, init, Schema)`.
+- No `const x = "string"` at module scope (`no-string-sentinel-const`).
+- No `Effect.succeed("literal")` (`no-string-sentinel-return`).
+- `program` must assign `Effect.gen(...)` to a local variable before returning (`no-effect-wrapper-alias`).
+- Nest Effect calls flat: assign inner Effects to variables before passing to outer ones (`no-nested-effect-call`).
+- Helpers: `readJsonFile(path, Schema)`, `fetchJson(url, init, Schema)`, `fetchJsonCached(url, init, Schema, { ttlMinutes, cacheKey })`.
 
 linteffect covers `tools/` in the `lint` and `lint:effect` scripts.
 

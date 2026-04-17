@@ -73,8 +73,14 @@ function describeArgs(args: unknown): ToolArgSpec[] {
 	const specs: ToolArgSpec[] = [];
 	for (const [name, field] of Object.entries(args.fields)) {
 		const tag = fieldTag(field);
-		const optional = tag === "Optional" || tag === "UndefinedOr";
-		specs.push({ name, type: tag, optional });
+		// Schema.optional(X) lowers to a Union with undefined in Effect v4, so
+		// Union tags in a Struct arg position are treated as optional. Genuine
+		// unions of concrete types are rare in CLI arg schemas.
+		const optional =
+			tag === "Optional" || tag === "UndefinedOr" || tag === "Union";
+		// Prettier type label for the common Union-is-optional case.
+		const type = tag === "Union" ? "string" : tag;
+		specs.push({ name, type, optional });
 	}
 	return specs;
 }

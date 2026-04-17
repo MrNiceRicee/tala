@@ -1,59 +1,58 @@
 {
-  "name": "@mrnicericee/tala",
-  "version": "0.1.0",
-  "description": "Claim-grounded research lab - topics, sources, claim markers, verify/refine pipeline, Effect-native tool runner.",
-  "keywords": [
-    "research",
-    "knowledge-base",
-    "claims",
-    "citations",
-    "effect",
-    "bun",
-    "cli"
-  ],
-  "type": "module",
-  "bin": {
-    "tala": "src/cli.ts"
-  },
-  "files": [
-    "src",
-    "README.md",
-    "LICENSE"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MrNiceRicee/tala.git"
-  },
-  "author": "Joshua Santos",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/MrNiceRicee/tala/issues"
-  },
-  "homepage": "https://github.com/MrNiceRicee/tala#readme",
-  "scripts": {
-    "lab": "bun src/cli.ts",
-    "tala": "bun src/cli.ts",
-    "test": "bun test",
-    "lint": "biome check src/ test/ && linteffect check src/ tools/",
-    "lint:fix": "biome check --write src/ test/",
-    "lint:biome": "biome check src/ test/",
-    "lint:effect": "linteffect check src/ tools/",
-    "typecheck": "tsc --noEmit",
-    "check": "bun run typecheck && bun run lint && bun test"
-  },
-  "dependencies": {
-    "@clack/prompts": "^1.2.0",
-    "@effect/platform-bun": "4.0.0-beta.48",
-    "effect": "4.0.0-beta.48",
-    "gray-matter": "^4.0.3",
-    "remark-frontmatter": "^5.0.0",
-    "remark-parse": "^11.0.0",
-    "unified": "^11.0.0"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "latest",
-    "@catenarycloud/linteffect": "github:OperationalFallacy/biome-effect-linting-rules#prerelease-cli-demo-runner",
-    "@types/bun": "latest",
-    "typescript": "latest"
-  }
+	"name": "@mrnicericee/tala",
+	"version": "0.1.0",
+	"description": "Claim-grounded research lab - topics, sources, claim markers, verify/refine pipeline, Effect-native tool runner.",
+	"keywords": [
+		"research",
+		"knowledge-base",
+		"claims",
+		"citations",
+		"effect",
+		"bun",
+		"cli"
+	],
+	"type": "module",
+	"bin": {
+		"tala": "src/cli.ts"
+	},
+	"files": [
+		"src",
+		"README.md",
+		"LICENSE"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/MrNiceRicee/tala.git"
+	},
+	"author": "Joshua Santos",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/MrNiceRicee/tala/issues"
+	},
+	"homepage": "https://github.com/MrNiceRicee/tala#readme",
+	"scripts": {
+		"tala": "bun src/cli.ts",
+		"test": "bun test",
+		"lint": "biome check src/ test/ && linteffect check src/ tools/",
+		"lint:fix": "biome check --write src/ test/",
+		"lint:biome": "biome check src/ test/",
+		"lint:effect": "linteffect check src/ tools/",
+		"typecheck": "tsc --noEmit",
+		"check": "bun run typecheck && bun run lint && bun test"
+	},
+	"dependencies": {
+		"@clack/prompts": "^1.2.0",
+		"@effect/platform-bun": "4.0.0-beta.48",
+		"effect": "4.0.0-beta.48",
+		"gray-matter": "^4.0.3",
+		"remark-frontmatter": "^5.0.0",
+		"remark-parse": "^11.0.0",
+		"unified": "^11.0.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "latest",
+		"@catenarycloud/linteffect": "github:OperationalFallacy/biome-effect-linting-rules#prerelease-cli-demo-runner",
+		"@types/bun": "latest",
+		"typescript": "latest"
+	}
 }
