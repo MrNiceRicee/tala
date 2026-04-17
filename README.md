@@ -1,58 +1,81 @@
-# Research Lab
+```text
+  _        _
+ | |_ __ _| | __ _
+ | __/ _` | |/ _` |
+ | || (_| | | (_| |
+  \__\__,_|_|\__,_|
+```
 
-A markdown-first research system for gathering knowledge and making informed decisions across any domain.
+*tagalog for both* note *and* star — *the fixed reference your thinking orients to.*
 
-## What this is
+Claim-grounded research lab. Write topics with explicit claim markers, cross-check sources, run deterministic tools on your data, and ship knowledge bases an agent (or a human) can trust.
 
-A durable research environment where a human and AI collaborator work together on complex topics. Two modes:
+## Prerequisites
 
-1. **Curiosity deep dives** — exploring topics outside your domain
-2. **Project knowledge bases** — building understanding for active work
+[Bun](https://bun.sh) v1.3 or later.
 
-Every claim needs proof or an explicit label. The system fights hallucination drift by design.
+```sh
+curl -fsSL https://bun.sh/install | bash
+```
 
-## Core rules
+## Install
 
-- one folder per topic under `topics/`
-- hub note named after the topic slug: `topics/<slug>/<slug>.md`
-- sources live in `topics/<slug>/sources/`, one file per source
-- computations live in `topics/<slug>/computations/`, scripts + outputs
-- reusable cross-topic scripts live in `tools/` at the repo root
-- every note has YAML frontmatter with `type`, `title`, `status`, `created`, `updated`
-- proven claims link to evidence inline; unproven claims use `*(unsupported)*`, `*(single-source)*`, `*(hypothesis)*`, or `*(contradicted)*`
+Run without installing:
 
-See `CONVENTIONS.md` for full rules and `bun run lab help` for the CLI.
+```sh
+bunx @mrnicericee/tala init
+```
 
-## Folder layout
+Or install globally:
 
-- `sketch/` — raw captures and rough ideas without a topic yet *(gitignored content)*
-- `topics/` — one directory per research topic *(gitignored content)*
-- `topics/index.md` — master catalog, regenerated via `lab index`
-- `archive/` — inactive or finished work *(gitignored content)*
-- `tools/` — personal reusable scripts across topics *(gitignored content)*
-- `.env` — API keys for tools *(gitignored, see `.env.example` for the template)*
-- `src/` — CLI source (Bun + TypeScript + EffectTS v4)
+```sh
+bun add -g @mrnicericee/tala
+```
 
-The tool is shareable. The research content stays local.
+## Quick Start
+
+```sh
+mkdir my-research && cd my-research
+tala init                           # wizard: where topics/tools live, commit or ignore
+tala new "caching strategies"       # creates topics/caching-strategies/
+$EDITOR topics/caching-strategies/caching-strategies.md
+tala validate                       # structure + claim-marker discipline
+tala verify caching-strategies      # emit cross-check protocol for an agent
+tala tool caching-strategies benchmark   # runs ./tools/benchmark.ts on the topic
+```
 
 ## Commands
 
-```
-lab new "Title"        create a new topic
-lab gather <slug>      output research context for the agent
-lab verify <slug>      check + corroboration context
-lab refine <slug>      tournament-refine protocol (prepare + apply)
-lab validate [slug]    structural + content validation
-lab search "query"     full-text search
-lab check              staleness report
-lab compute <slug> <script>    run a topic-local deterministic script
-lab tool <slug> <name>         run a reusable tool from tools/
-lab tools              list available tools
-lab index              regenerate topics catalog
-lab conventions        regenerate CONVENTIONS.md from code
-lab help [topic]       show conventions and usage
-```
+| command                        | what it does                                              |
+|--------------------------------|-----------------------------------------------------------|
+| `tala init`                    | scaffold `.tala/config.json`, `topics/`, `tools/`, `.env` |
+| `tala new "Title"`             | create a new topic (hub + sources/ + notes/ + comps)      |
+| `tala index`                   | regenerate the topics index                               |
+| `tala validate [slug]`         | structure, frontmatter, claim markers, link resolution    |
+| `tala search "query"`          | full-text search across topics                            |
+| `tala check`                   | staleness report                                          |
+| `tala gather <slug>`           | emit gather context for an agent to fill                  |
+| `tala verify <slug>`           | emit cross-check protocol for claims in a topic           |
+| `tala tool <slug> <name>`      | run `./tools/<name>.ts` against a topic, save output      |
+| `tala tools`                   | list tools available in `./tools/`                        |
+| `tala refine <slug>`           | tournament-refine a section                               |
+| `tala conventions`             | regenerate `AGENTS.md` from the convention definitions    |
+
+## Concepts
+
+- **Topics** — a folder of `topics/<slug>/` with a hub `.md`, `sources/`, `notes/`, and `computations/`. Hubs state *intent*, *questions*, *findings*; sources cite evidence; notes hold derivations; computations are tool outputs with provenance frontmatter (`tool:`, `args:`, `ran_at:`).
+- **Claim markers** — every factual statement carries its epistemic status. `*(unsupported)*` / `*(single-source)*` / `*(hypothesis)*` / `*(contradicted)*` / `[[source-link]]`. `tala validate` enforces them.
+- **Tools** — project-specific, Effect-native TypeScript files in `./tools/`. Register with `defineTool({...}, import.meta)`. Run via `tala tool <slug> <name>`. Outputs land in `topics/<slug>/computations/<name>.output.md`.
+- **HTTP cache** — `fetchJsonCached` keys requests by `sha256(method + url + body)`, writes to `./.cache/`. `expiresAt` precomputed per entry. Cache misses fail open.
 
 ## Stack
 
-Bun + TypeScript + EffectTS v4 (beta). Markdown files as durable storage. Obsidian-compatible links and frontmatter. Biome + linteffect for code quality.
+Bun · TypeScript · Effect v4 (beta) · unified/remark · gray-matter · Biome · Clack.
+
+## Sibling
+
+[`liham`](https://github.com/MrNiceRicee/liham) — terminal markdown previewer. Pairs well with `tala`: `liham topics/<slug>/<slug>.md` to read, `tala validate` to verify.
+
+## License
+
+MIT

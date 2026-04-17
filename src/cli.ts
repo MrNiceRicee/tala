@@ -21,7 +21,10 @@ class CliError extends Data.TaggedError("CliError")<{
 	readonly [Runtime.errorExitCode] = this.exitCode;
 }
 
-const labRoot = import.meta.dir.replace(/\/src$/, "");
+// labRoot is the user's current working directory — where they invoked
+// `tala` from. Topics, tools, .tala/config.json, .env, .cache all resolve
+// relative to here. Falls back to "." if PWD is unset (unlikely in Bun).
+const labRoot = Bun.env.PWD ?? ".";
 
 const commandDescriptions: Record<string, string> = {
 	new: "create a new research topic",

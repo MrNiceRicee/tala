@@ -1,9 +1,38 @@
 {
-  "name": "research-lab",
+  "name": "@mrnicericee/tala",
   "version": "0.1.0",
+  "description": "Claim-grounded research lab — topics, sources, claim markers, verify/refine pipeline, Effect-native tool runner.",
+  "keywords": [
+    "research",
+    "knowledge-base",
+    "claims",
+    "citations",
+    "effect",
+    "bun",
+    "cli"
+  ],
   "type": "module",
+  "bin": {
+    "tala": "src/cli.ts"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MrNiceRicee/tala.git"
+  },
+  "author": "Joshua Santos",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MrNiceRicee/tala/issues"
+  },
+  "homepage": "https://github.com/MrNiceRicee/tala#readme",
   "scripts": {
     "lab": "bun src/cli.ts",
+    "tala": "bun src/cli.ts",
     "test": "bun test",
     "lint": "biome check src/ test/ && linteffect check src/ tools/",
     "lint:fix": "biome check --write src/ test/",
