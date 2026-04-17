@@ -27,7 +27,16 @@ export const WorkingDir = Context.Reference<{ readonly path: string }>(
 
 export interface ToolDefinition<A, I> {
 	name: string;
+	// one-line summary shown by `tala get tools` and `tala get tools <name>`.
+	description?: string;
 	args: Schema.Codec<A, I>;
+	// env keys the tool requires at runtime. Declarative so `tala init` can
+	// scan registered tools and generate .env.example without a hardcoded catalog.
+	env?: readonly string[];
+	// cache policy the tool's `run` uses (informational; run() still calls
+	// fetchJsonCached itself with these values). Lets `tala get tools <name>`
+	// surface the policy without parsing the function body.
+	cache?: { ttlMinutes: number };
 	run: (args: A) => ReturnType<typeof readTextFile>;
 }
 
